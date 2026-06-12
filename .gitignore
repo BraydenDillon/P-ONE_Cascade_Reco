@@ -1,0 +1,10 @@
+plots/
+nue_data/
+scripts/out/
+scripts/err
+scripts/*.swq
+scripts/core.*
+*.i3.zst
+*.err
+*.out
+fits/

@@ -1,0 +1,17 @@
+#!/bin/bash --login
+
+#SBATCH --job-name=sampled_logL
+#SBATCH --array=0-500
+#SBATCH --ntasks=1
+#SBATCH --time=24:00:00
+#SBATCH --cpus-per-task=1
+#SBATCH --error=err/%x-%j.err
+#SBATCH --mem-per-cpu=16G
+#SBATCH --output=out/%x-%j.out
+
+echo "Running Delta LogL Collection"
+
+cd /mnt/home/dillonb5/cascades/scripts
+eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.3.0/setup.sh`
+
+/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/build_delta_lnL.py -i /mnt/home/dillonb5/cascades/nue_data/gen_ -r $SLURM_ARRAY_TASK_ID -d "3d"
