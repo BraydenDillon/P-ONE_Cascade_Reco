@@ -61,32 +61,7 @@ def displacement_magnitude(pos1: np.array, pos2: np.array) -> float:
 splinefit = photospline.SplineTable('/mnt/home/dillonb5/cascades/fits/splinelog.fits')
 splinefit_3d = photospline.SplineTable('/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits')
 
-def cdf(coords, Event):
-    t = np.linspace()
-    pvalues = []
-    for event in Event:
-        dr = displacement_magnitude(coords[0:3], np.array(event[0:3]))
-        
-        
-        pdf = np.exp(splinefit.evaluate_simple([dr, t]))
-        cdf = np.sum(pdf[np.searchsorted(t, event[-1]):])
-        pvalues.append(cdf)
 
-def sample_dt(dr:np.array, dphi:np.array):
-    samples = []
-    spline=splinefit_3d 
-    for i in range(len(dr)):
-        t = np.linspace(spline.extents[-1][0], spline.extents[-1][1], 2000)
-        pvalues = []
-        pdf = evalPdf(spline, dr[i], dphi[i], t)
-        for dt in t:
-            cdf = np.sum(pdf[:np.searchsorted(t, dt)])/np.sum(pdf)
-            pvalues.append(cdf)
-    
-        sample_probability = random.uniform(0,1)
-        idx = np.searchsorted(pvalues, sample_probability)
-        samples.append(t[idx])
-    return samples
 
 
 
@@ -97,12 +72,14 @@ def Likelihood(coords: np.array, Event):
     # coords should have shape [x,y,z,t]
     # Event has shape [x,y,z,t,dr,dt,dphi,Ephi]. We only use the first 4 here
     event_xyz = Event[:,0:3]
-    #event_t = Event[:,3]
+    event_t = Event[:,3]
 
     diff = coords[0:3] - event_xyz
     dr = np.linalg.norm(diff, axis=1)
     # Calculate Time Residual
     #dt = abs(coords[-1] - event_t) - (1.34*dr/c * 1e9)
+    # For sampled data, t is stored as time residual
+    dt = event_t
 
     
 
@@ -114,7 +91,7 @@ def Likelihood(coords: np.array, Event):
     
     
 
-def Likelihood_3d(coords: np.array, Event: np.array, sampling=True):
+def Likelihood_3d(coords: np.array, Event: np.array, sampling=False):
     L = 0
     # coords should have shape [x,y,z,theta,phi,t]
     # Event has shape [N, 6] cols:(x,y,z,t,dr,dt). We only use the first 4 here
@@ -174,7 +151,7 @@ def evaluate_frame(frame):
         model = minimizer(truth, EventData, func)
         model_likelihood = func(model['x'], EventData)
         truth_likelihood = func(truth, EventData)
-        delta_logL.append((truth_likelihood - model_likelihood, frame['I3EventHeader'].event_id))
+        delta_logL.append((truth_likelihood - model_likelihood))
     
     #return truth_likelihood - model_likelihood
 

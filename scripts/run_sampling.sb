@@ -14,4 +14,4 @@ echo "Running Delta LogL Collection"
 cd /mnt/home/dillonb5/cascades/scripts
 eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.3.0/setup.sh`
 
-/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/build_delta_lnL.py -i /mnt/scratch/dillonb5/sampled_data/new_ -r $SLURM_ARRAY_TASK_ID -d "2d"
+/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/sampling.py -i /mnt/home/dillonb5/cascades/nue_data/gen_ -r $SLURM_ARRAY_TASK_ID 
