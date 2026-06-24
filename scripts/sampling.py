@@ -1,5 +1,10 @@
 from icecube import dataclasses, phys_services, icetray, simclasses, dataio
 import numpy as np
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath('..'))
+from scripts.SplineEval import evalPdf
 import photospline
 import argparse
 
@@ -7,7 +12,7 @@ parser = argparse.ArgumentParser(description="Takes a .i3 file and a gcd file")
 parser.add_argument("-i", "--infile", default="/mnt/home/dillonb5/cascades/sacrifice_data/gen_")
 parser.add_argument("-g", "--gcdfile", default= "/mnt/home/dillonb5/cascades/gcdfile/PONE_800mGrid.i3.gz")
 parser.add_argument("-r", "--runnumber", type=int, default=500)
-parser.add_argument('-o', '--outfile', default = "/mnt/scratch/dillonb5/sampled_data/new_")
+parser.add_argument('-o', '--outfile', default = "/mnt/scratch/dillonb5/sampled_data_3d/new_")
 args=parser.parse_args()
 runnumber = -999
 if args.runnumber < 10:
@@ -27,7 +32,7 @@ tray.AddModule('I3Reader', 'reader', FilenameList = [gcdfile, infile])
 
 
 
-spline = photospline.SplineTable('/mnt/home/dillonb5/cascades/fits/splinelog.fits')
+spline = photospline.SplineTable('/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits')
 tgrid = np.linspace(spline.extents[1][0], spline.extents[1][1], 1000)
 N_GROUP = 1.34
 N_PHASE = 1.35557
@@ -52,11 +57,18 @@ def resample(frame):
             stats['bad_doms'] += 1
             continue
         pos = geo[omkey].pos
+        Epos = electron.pos
+        diff = Epos - pos
         dist = phys_services.I3Calculator.cherenkov_distance(electron, pos, N_GROUP, N_PHASE)
-        # d_eval = min(max(dist, DLO + 1e-6), DHI - 1e-6)
-        # if d_eval != dist:
-        #     stats["doms_clamped"] += 1
-        pdf = np.clip(np.exp(spline.evaluate_simple([tgrid, dist])), 0.0, None)
+        zenith = electron.dir.zenith
+        azimuth = electron.dir.azimuth
+        Ex = np.sin(zenith)*np.cos(azimuth)
+        Ey = np.sin(zenith)*np.sin(azimuth)
+        Ez = np.cos(zenith)
+        Eangle = np.array([Ex, Ey, Ez])
+        phiE = np.arccos(np.dot(diff, Eangle) / dist) 
+
+        pdf = evalPdf(spline, dist, phiE, tgrid)
         tot = pdf.sum()
         if not np.isfinite(tot) or tot <= 0:
             stats["doms_skipped"] += 1

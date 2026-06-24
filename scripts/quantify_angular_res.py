@@ -34,23 +34,57 @@ angular_resolution = []
 tray = icetray.I3Tray()
 tray.AddModule('I3Reader', 'reader', FilenameList = [gcdfile, infile])
 
-def datacollect(frame):
-    t = []
-    xyz = []
+string_subset = np.array([266, 199, 220, 275,  96, 113, 112, 286, 173, 116,   8, 240, 130,
+       307, 281, 112, 324, 306, 183, 303, 314, 289,  72, 113, 147, 177,
+       160,  57,  54, 142, 291, 204,  75, 215, 179, 143, 315, 201, 182,
+        78,  60,   1, 326,  46, 272, 232, 134, 162, 268, 101, 139, 320,
+       195,  11,  86, 300,  84,  67, 129,  63, 310,  59, 215, 312, 188,
+       138,  71, 120, 139,  12,  26, 117, 129,  40,   6, 156,  79, 132,
+       127, 161])
 
+c = 299792458
+n = 1.34
+def datacollect(frame):
+    dt = []
+    t = []
+    dphilst = []
+    dr = []
+    xyz = []
+    
+
+    Epos = frame['I3MCTree'][1].pos
     doms = frame['I3ModuleGeoMap']
     omkeys = frame['I3Photons'].keys()
     photons = frame['I3Photons']
     for key in omkeys:
+        if key.string not in string_subset:
+            continue
         modulekey = dataclasses.ModuleKey(key.string, key.om)
         dompos = doms[modulekey].pos
         for photon in photons[key]:
             photon_pos = dompos + photon.pos
             xyz.append([photon_pos.x, photon_pos.y, photon_pos.z])
+            flight = dompos + photon.pos - Epos
+            dr.append(flight.magnitude)
+            offset = flight.magnitude * n / c
+            dt.append(photon.time - offset*10**9)
             t.append(photon.time)
-            #t.append(random.uniform(-30, 1400))
+            phi = photon.dir
+            # randx, randy, randz = random.uniform(-1, 1, 3)
+            # x = phi.x
+            # y = phi.y
+            # z = phi.z
+            # dx = x - randx
+            # dy = y - randy
+            # dz = z - randz
+            # dphi = dataclasses.I3Direction(dx, dy, dz)
+            # dphilst.append(dphi.zenith)
+            # Etheta.append(flight.azimuth)
+            # Ephi.append(flight.zenith)
             
     return np.column_stack([xyz, t])
+    
+    
 
 def displacement_magnitude(pos1: np.array, pos2: np.array) -> float:
     vector = pos1 - pos2
@@ -107,6 +141,8 @@ def minimizer(guess, event, function=Likelihood_3d):
 def angular_res(frame):
     if (len(frame['I3MCTree']) != 0) and (len(frame['I3Photons']) != 0):
         EventData = datacollect(frame) 
+        if EventData.shape[0] == 0:
+            return  # skip this frame, no photons on selected strings
         truth = np.array([frame['I3MCTree'][1].pos.x, frame['I3MCTree'][1].pos.y, frame['I3MCTree'][1].pos.z, frame['I3MCTree'][1].dir.azimuth, frame['I3MCTree'][1].dir.zenith, frame['I3MCTree'][1].time])
         Energy = frame['I3MCTree'][0].energy
         best_fit = minimizer(truth, EventData)
@@ -129,5 +165,5 @@ print('Tray Populated')
 tray.Execute()
 tray.Finish()
 print('Tray Finished')
-np.save('/mnt/scratch/dillonb5/resolutions3/resolution_'+runnumber+'.npy', angular_resolution)
+np.save('/mnt/scratch/dillonb5/resolutions_80str/resolution_'+runnumber+'.npy', angular_resolution)
 

@@ -3,7 +3,7 @@ import os
 
 sys.path.insert(0, os.path.abspath('..'))
 import photospline
-from icecube import dataio, dataclasses, icetray, simclasses
+from icecube import dataio, dataclasses, icetray, simclasses, phys_services
 import numpy as np
 from scipy import optimize, integrate
 import argparse
@@ -12,7 +12,7 @@ import random
 
 
 c = 299792458
-n = 1.33
+n = 1.35557
 
 parser = argparse.ArgumentParser(description = "Takes I3photons and I3Electrons from simulation files to read out positional data")
 parser.add_argument("-i", "--infile", default = "/mnt/home/dillonb5/cascades/nue_data/gen_001")
@@ -77,9 +77,9 @@ def Likelihood(coords: np.array, Event):
     diff = coords[0:3] - event_xyz
     dr = np.linalg.norm(diff, axis=1)
     # Calculate Time Residual
-    #dt = abs(coords[-1] - event_t) - (1.34*dr/c * 1e9)
+    dt = abs(coords[-1] - event_t) - (n*dr/c * 1e9)
     # For sampled data, t is stored as time residual
-    dt = event_t
+    #dt = event_t
 
     
 
@@ -91,7 +91,7 @@ def Likelihood(coords: np.array, Event):
     
     
 
-def Likelihood_3d(coords: np.array, Event: np.array, sampling=False):
+def Likelihood_3d(coords: np.array, Event: np.array):
     L = 0
     # coords should have shape [x,y,z,theta,phi,t]
     # Event has shape [N, 6] cols:(x,y,z,t,dr,dt). We only use the first 4 here
@@ -106,6 +106,7 @@ def Likelihood_3d(coords: np.array, Event: np.array, sampling=False):
     dr = np.linalg.norm(diff, axis=1)
     # Calculate Time Residual
     dt = abs(coords[5] - event_t) - (1.34*dr/c * 1e9)
+    #dt = event_t
 
     # Construct Electron direction unit vector from zenith and azimuth
     Ex = np.sin(coords[4])*np.cos(coords[3])
@@ -116,8 +117,7 @@ def Likelihood_3d(coords: np.array, Event: np.array, sampling=False):
     # Calculate angle between electron travel vector and displacement vector
     Eangle = np.array([Ex, Ey, Ez])
     Ephi = np.arccos(np.dot(diff, Eangle) / dr)
-    if sampling == True:
-        dt = sample_dt(dr=dr, dphi=Ephi)
+    
 
     #print(Ephi)
     #Calculate Likelihood from constructed coordinates
@@ -125,6 +125,9 @@ def Likelihood_3d(coords: np.array, Event: np.array, sampling=False):
     vals = splinefit_3d.evaluate_simple([params[0], params[1], params[2]])
     L = np.where(vals == 0, -30, vals)
     return -np.sum(L)
+
+
+
 
 
 # Take absolute positions of PMTs and time 
@@ -151,7 +154,7 @@ def evaluate_frame(frame):
         model = minimizer(truth, EventData, func)
         model_likelihood = func(model['x'], EventData)
         truth_likelihood = func(truth, EventData)
-        delta_logL.append((truth_likelihood - model_likelihood))
+        delta_logL.append([truth_likelihood - model_likelihood, len(frame['I3Photons'])])
     
     #return truth_likelihood - model_likelihood
 
@@ -166,5 +169,5 @@ tray.Execute()
 tray.Finish()
 print('Tray Finished')
 ary = np.array(delta_logL)
-np.save('/mnt/scratch/dillonb5/sampled_logL/delta_ary_'+runnumber+'.npy', ary)
+np.save('/mnt/scratch/dillonb5/sampled_logL_3d/delta_ary_'+runnumber+'.npy', ary)
 
