@@ -19,7 +19,9 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     "-i", "--infile", default="/mnt/home/dillonb5/cascades/nue_data/gen_001"
 )
-parser.add_argument("-r", "--runnumber", type=int, default=1)
+parser.add_argument(
+    "-r", "--runnumber", type=int, default=1
+    )
 parser.add_argument(
     "-g", "--gcdfile", default="/mnt/home/dillonb5/cascades/gcdfile/PONE_800mGrid.i3.gz"
 )
@@ -66,7 +68,9 @@ def displacement_magnitude(pos1: np.array, pos2: np.array) -> float:
     return np.sqrt(vector[0] ** 2 + vector[1] ** 2 + vector[2] ** 2)
 
 
-splinefit = photospline.SplineTable("/mnt/home/dillonb5/cascades/fits/splinelog.fits")
+splinefit = photospline.SplineTable(
+    "/mnt/home/dillonb5/cascades/fits/splinelog.fits"
+    )
 splinefit_3d = photospline.SplineTable(
     "/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits"
 )

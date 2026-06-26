@@ -21,7 +21,12 @@ I3RecoPulse
 """
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--input-prefix", required=True, help="Path prefix; full input path is <prefix><run>.i3.zst")
+parser.add_argument(
+    "-i",
+    "--input-prefix",
+    required=True,
+    help="Path prefix; full input path is <prefix><run>.i3.zst",
+)
 parser.add_argument("-r", "--run", type=int, required=True, help="Run / array index")
 args = parser.parse_args()
 
@@ -37,14 +42,15 @@ OUTFILE = f"/mnt/home/jalabadz/myWork/myScripts/RESULTS/mcpe2pulses_RESULT/outpu
 # Just for cleanness I put this here
 MCPE_KEY = "Accepted_MCPEMap"
 
+
 def mcpe_to_pulses(frame):
     # Guard against mistakes
     if MCPE_KEY not in frame:
         return
-    
+
     # empty container for output. Map of OMKey -> list of pulses
     pulses = dataclasses.I3RecoPulseSeriesMap()
-    
+
     """
     We have a dict with key = OMKey and val = lists of MCPE hits 
     for a particular DOM.
@@ -58,7 +64,7 @@ def mcpe_to_pulses(frame):
     for omkey, mcpes in frame[MCPE_KEY].items():
         # for THIS DOM, make a list of I3RecoPulseSeries. Fill it one pulse per MCPE
         series = dataclasses.I3RecoPulseSeries()
-        
+
         # for every MCPE hit on this DOM
         # make an I3RecoPulse
         # copy the time across (both in ns)
@@ -68,16 +74,21 @@ def mcpe_to_pulses(frame):
         for hit in mcpes:
             pulse = dataclasses.I3RecoPulse()
             pulse.time = hit.time
-            pulse.charge = float(hit.npe) # npe is int, charge is float so have to convert
+            pulse.charge = float(
+                hit.npe
+            )  # npe is int, charge is float so have to convert
             pulse.width = 1.0  # default
             series.append(pulse)
-            
+
         # Add this DOM to the dict if it has pulses
         if len(series) > 0:
             pulses[omkey] = series
-            
+
     # The finished dict gets to be in the frame with key "I3RecoPulses"
-    frame["MCPulses"] = pulses # SHOULD HAVE A DIFFERENT NAME, THE NAME IS HOW WE IDENTIFY WHICH PULSE SERIES IT'S GOING TO BE. IN THIS CASE CALL THEM MCPulses or something
+    frame["MCPulses"] = (
+        pulses  # SHOULD HAVE A DIFFERENT NAME, THE NAME IS HOW WE IDENTIFY WHICH PULSE SERIES IT'S GOING TO BE. IN THIS CASE CALL THEM MCPulses or something
+    )
+
 
 tray = I3Tray()
 tray.Add("I3Reader", FilenameList=[GCDFILE, INFILE])
