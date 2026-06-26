@@ -4,7 +4,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.abspath(".."))
-from scripts.SplineEval import evalPdf
+from scripts.python.SplineEval import evalPdf
 import photospline
 import argparse
 from scipy.stats import norm
@@ -18,7 +18,7 @@ parser.add_argument(
 )
 parser.add_argument("-r", "--runnumber", type=int, default=500)
 parser.add_argument(
-    "-o", "--outfile", default="/mnt/scratch/dillonb5/sampled_data_3d/new_"
+    "-o", "--outfile", default="/mnt/scratch/dillonb5/sampled_data_exact/new_exact_"
 )
 args = parser.parse_args()
 runnumber = -999
@@ -79,10 +79,10 @@ def resample(frame):
         Eangle = np.array([Ex, Ey, Ez])
         phiE = np.arccos(np.dot(diff, Eangle) / dist)
 
-        pdf = evalPdf(spline, dist, phiE, tgrid)
-        # dist_for_pdf = 20.0
-        # phiE_for_pdf = 0.3
-        # pdf = evalPdf(spline, dist_for_pdf, phiE_for_pdf, tgrid)
+        # pdf = evalPdf(spline, dist, phiE, tgrid)
+        dist_for_pdf = 20.0
+        phiE_for_pdf = 0.3
+        pdf = evalPdf(spline, dist_for_pdf, phiE_for_pdf, tgrid)
         # pdf = norm.pdf(tgrid)
         pdf = np.clip(pdf, 0, None)
         tot = pdf.sum()
@@ -104,12 +104,12 @@ def resample(frame):
             new_tres = float(np.interp(rng.random(), cdf, tgrid))
             rows.append(
                 (
-                    p.time - p.time + new_tres,
+                    new_tres,
                     p.weight,
                     p.wavelength,
-                    p.dir.zenith,
-                    p.dir.azimuth,
-                    p.pos,
+                    p_angle.zenith,
+                    p_angle.azimuth,
+                    p_pos,
                 )
             )
             stats["pulses"] += 1

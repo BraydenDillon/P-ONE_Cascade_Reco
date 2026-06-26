@@ -8,7 +8,7 @@ from icecube import dataio, icetray, dataclasses, simclasses
 import numpy as np
 import matplotlib.pyplot as plt
 import numpy.random as random
-from scripts.SplineEval import evalLogPdf, evalPdf
+from scripts.python.SplineEval import evalLogPdf, evalPdf
 from scipy.stats import norm
 
 gcd = dataio.I3File("../gcdfile/PONE_800mGrid.i3.gz")
@@ -111,7 +111,7 @@ def compare_spline(fixed_coords: np.array, spline, frames) -> None:
         vals_in_bin = np.append(vals_in_bin, params[:, 2].T)
         # vals_in_bin = np.append(vals_in_bin, dt)
 
-        print(len(vals_in_bin) - len(params))
+        #print(len(vals_in_bin) - len(params))
 
     t = np.linspace(min(spline.knots[-1]), max(spline.knots[-1]), 1000)
     pdf = evalPdf(spline, dR, dphi, t)

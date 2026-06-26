@@ -7,7 +7,7 @@ from icecube import dataio, dataclasses, icetray, simclasses, phys_services
 import numpy as np
 from scipy import optimize, integrate
 import argparse
-from scripts.SplineEval import evalPdf
+from scripts.python.SplineEval import evalPdf
 import random
 
 c = 299792458
@@ -105,8 +105,8 @@ def Likelihood_3d(coords: np.array, Event: np.array):
     diff = coords[0:3] - event_xyz
     dr = np.linalg.norm(diff, axis=1)
     # Calculate Time Residual
-    # dt = abs(coords[5] - event_t) - (1.34*dr/c * 1e9)
-    dt = event_t
+    dt = abs(coords[5] - event_t) - (1.34*dr/c * 1e9)
+    # dt = event_t
 
     # Construct Electron direction unit vector from zenith and azimuth
     Ex = np.sin(coords[4]) * np.cos(coords[3])
@@ -121,7 +121,7 @@ def Likelihood_3d(coords: np.array, Event: np.array):
     # Calculate Likelihood from constructed coordinates
     params = np.array([dr, Ephi, dt])
     vals = splinefit_3d.evaluate_simple([params[0], params[1], params[2]])
-    L = np.where(vals == 0, -10, vals)
+    L = np.where(vals == 0, -30, vals)
     return -np.sum(L)
 
 
@@ -161,6 +161,10 @@ def evaluate_frame(frame):
                 ]
             )
             func = Likelihood_3d
+
+        else:
+            print("Error: Ndim must be either '3d' or '2d'")
+            return True
         model = minimizer(truth, EventData, func)
         model_likelihood = func(model["x"], EventData)
         truth_likelihood = func(truth, EventData)
