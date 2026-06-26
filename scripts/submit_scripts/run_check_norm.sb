@@ -1,6 +1,6 @@
 #!/bin/bash --login
 
-#SBATCH --job-name=SplineTesting
+#SBATCH --job-name=check_norm
 #SBATCH --ntasks=1
 #SBATCH --time=24:00:00
 #SBATCH --cpus-per-task=1
@@ -13,4 +13,4 @@ echo "Creating Sample Check Graph"
 cd /mnt/home/dillonb5/cascades/scripts
 eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.3.0/setup.sh`
 
-/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/Check_sampling.py
+/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/python/check_norm_sampling.py

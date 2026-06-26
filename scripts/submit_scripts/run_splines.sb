@@ -13,4 +13,4 @@ echo "Running Spline Convolution"
 cd /mnt/home/dillonb5/cascades/scripts
 eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.3.0/setup.sh`
 
-/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/define_spline_fit.py
+/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/python/define_spline_fit.py

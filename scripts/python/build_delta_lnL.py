@@ -41,8 +41,8 @@ def datacollect(frame):
     xyz = []
 
     doms = frame['I3ModuleGeoMap']
-    omkeys = frame['I3Photons'].keys()
-    photons = frame['I3Photons']
+    omkeys = frame['new_photons'].keys()
+    photons = frame['new_photons']
     for key in omkeys:
         modulekey = dataclasses.ModuleKey(key.string, key.om)
         dompos = doms[modulekey].pos
@@ -77,9 +77,9 @@ def Likelihood(coords: np.array, Event):
     diff = coords[0:3] - event_xyz
     dr = np.linalg.norm(diff, axis=1)
     # Calculate Time Residual
-    dt = abs(coords[-1] - event_t) - (n*dr/c * 1e9)
+    #dt = abs(coords[-1] - event_t) - (n*dr/c * 1e9)
     # For sampled data, t is stored as time residual
-    #dt = event_t
+    dt = event_t
 
     
 
@@ -105,8 +105,8 @@ def Likelihood_3d(coords: np.array, Event: np.array):
     diff = coords[0:3] - event_xyz
     dr = np.linalg.norm(diff, axis=1)
     # Calculate Time Residual
-    dt = abs(coords[5] - event_t) - (1.34*dr/c * 1e9)
-    #dt = event_t
+    # dt = abs(coords[5] - event_t) - (1.34*dr/c * 1e9)
+    dt = event_t
 
     # Construct Electron direction unit vector from zenith and azimuth
     Ex = np.sin(coords[4])*np.cos(coords[3])
@@ -123,7 +123,7 @@ def Likelihood_3d(coords: np.array, Event: np.array):
     #Calculate Likelihood from constructed coordinates
     params = np.array([dr, Ephi, dt])
     vals = splinefit_3d.evaluate_simple([params[0], params[1], params[2]])
-    L = np.where(vals == 0, -30, vals)
+    L = np.where(vals == 0, -10, vals)
     return -np.sum(L)
 
 
@@ -143,7 +143,7 @@ def minimizer(guess, event, function=Likelihood):
     return minimized
 
 def evaluate_frame(frame):
-    if (len(frame['I3MCTree']) != 0) and (len(frame['I3Photons']) != 0):
+    if (len(frame['I3MCTree']) != 0) and (len(frame['new_photons']) != 0):
         EventData = datacollect(frame)
         if Ndim == "2d":
             truth = np.array([frame['I3MCTree'][1].pos.x, frame['I3MCTree'][1].pos.y, frame['I3MCTree'][1].pos.z, frame['I3MCTree'][1].time])
@@ -154,7 +154,7 @@ def evaluate_frame(frame):
         model = minimizer(truth, EventData, func)
         model_likelihood = func(model['x'], EventData)
         truth_likelihood = func(truth, EventData)
-        delta_logL.append([truth_likelihood - model_likelihood, len(frame['I3Photons'])])
+        delta_logL.append([truth_likelihood - model_likelihood, len(frame['new_photons'])])
     
     #return truth_likelihood - model_likelihood
 

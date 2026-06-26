@@ -1,0 +1,16 @@
+#!/bin/bash --login
+
+#SBATCH --job-name=SplineTesting
+#SBATCH --ntasks=1
+#SBATCH --time=24:00:00
+#SBATCH --cpus-per-task=1
+#SBATCH --error=err/%x-%j.err
+#SBATCH --mem-per-cpu=50G
+#SBATCH --output=out/%x-%j.out
+
+echo "Creating Sample Check Graph"
+
+cd /mnt/home/dillonb5/cascades/scripts
+eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.3.0/setup.sh`
+
+/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/python/Check_sampling.py

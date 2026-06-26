@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.abspath('..'))
 from scripts.SplineEval import evalPdf
 import photospline
 import argparse
+from scipy.stats import norm
 
 parser = argparse.ArgumentParser(description="Takes a .i3 file and a gcd file")
 parser.add_argument("-i", "--infile", default="/mnt/home/dillonb5/cascades/sacrifice_data/gen_")
@@ -33,7 +34,8 @@ tray.AddModule('I3Reader', 'reader', FilenameList = [gcdfile, infile])
 
 
 spline = photospline.SplineTable('/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits')
-tgrid = np.linspace(spline.extents[1][0], spline.extents[1][1], 1000)
+#tgrid = np.linspace(min(spline.knots[-1]), max(spline.knots[-1]), 1000)
+tgrid = np.linspace(-5, 5, 1000)
 N_GROUP = 1.34
 N_PHASE = 1.35557
 
@@ -43,6 +45,7 @@ def resample(frame):
     if "I3Photons" not in frame or "I3MCTree" not in frame:
         return True
     electron = dataclasses.I3Particle(frame["I3MCTree"][1])
+    electron.shape = dataclasses.I3Particle.Cascade
     # mu.shape = dataclasses.I3Particle.InfiniteTrack
     geo = frame['I3ModuleGeoMap']
     old = frame["I3Photons"]
@@ -69,6 +72,11 @@ def resample(frame):
         phiE = np.arccos(np.dot(diff, Eangle) / dist) 
 
         pdf = evalPdf(spline, dist, phiE, tgrid)
+        # dist_for_pdf = 20.0
+        # phiE_for_pdf = 0.3
+        #pdf = evalPdf(spline, dist_for_pdf, phiE_for_pdf, tgrid)
+        # pdf = norm.pdf(tgrid)
+        pdf = np.clip(pdf, 0, None)
         tot = pdf.sum()
         if not np.isfinite(tot) or tot <= 0:
             stats["doms_skipped"] += 1
@@ -79,14 +87,16 @@ def resample(frame):
         ns = simclasses.I3CompressedPhotonSeries()
         rows = []
         for p in series:
+            p_pos = dataclasses.I3Position(Epos.x + 20, Epos.y, Epos.z)
+            p_angle = dataclasses.I3Direction(zenith + 0.3, azimuth)
             old_tres = phys_services.I3Calculator.time_residual(electron, pos, p.time, N_GROUP, N_PHASE)
             new_tres = float(np.interp(rng.random(), cdf, tgrid))
-            rows.append((p.time - old_tres + new_tres, p.weight, p.wavelength, p.dir.zenith, p.dir.azimuth, p.pos))
+            rows.append((p.time - p.time + new_tres, p.weight, p.wavelength, p.dir.zenith, p.dir.azimuth, p.pos))
             stats["pulses"] += 1
         rows.sort(key=lambda r: r[0])
-        for t, w, lamb, zen, az, pos in rows:
+        for t, w, lamb, zen, az, ph_pos in rows:
             np_ = simclasses.I3CompressedPhoton()
-            np_.time, np_.weight, np_.wavelength, np_.dir, np_.pos = t, w, lamb, dataclasses.I3Direction(zen, az), pos
+            np_.time, np_.weight, np_.wavelength, np_.dir, np_.pos = t, w, lamb, dataclasses.I3Direction(zen, az), ph_pos
             ns.append(np_)
         new[omkey] = ns
         #new[omkey] = rows
