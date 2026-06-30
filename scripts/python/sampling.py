@@ -18,7 +18,7 @@ parser.add_argument(
 )
 parser.add_argument("-r", "--runnumber", type=int, default=500)
 parser.add_argument(
-    "-o", "--outfile", default="/mnt/scratch/dillonb5/sampled_data_exact/new_exact_"
+    "-o", "--outfile", default="/mnt/scratch/dillonb5/sampled_data_byhand/new_"
 )
 args = parser.parse_args()
 runnumber = -999
@@ -36,10 +36,11 @@ outfile = args.outfile + runnumber + ".i3.zst"
 tray = icetray.I3Tray()
 tray.AddModule("I3Reader", "reader", FilenameList=[gcdfile, infile])
 
+c = 299792458
 
 spline = photospline.SplineTable("/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits")
-# tgrid = np.linspace(min(spline.knots[-1]), max(spline.knots[-1]), 1000)
-tgrid = np.linspace(-5, 5, 1000)
+tgrid = np.linspace(spline.extents[-1][0], spline.extents[-1][1], 1000)
+# tgrid = np.linspace(-5, 5, 1000)
 N_GROUP = 1.34
 N_PHASE = 1.35557
 
@@ -68,9 +69,10 @@ def resample(frame):
         pos = geo[omkey].pos
         Epos = electron.pos
         diff = Epos - pos
-        dist = phys_services.I3Calculator.cherenkov_distance(
-            electron, pos, N_GROUP, N_PHASE
-        )
+        # dist = phys_services.I3Calculator.cherenkov_distance(
+        #     electron, pos, N_GROUP, N_PHASE
+        # )
+        dist = np.linalg.norm(diff)
         zenith = electron.dir.zenith
         azimuth = electron.dir.azimuth
         Ex = np.sin(zenith) * np.cos(azimuth)
@@ -79,10 +81,10 @@ def resample(frame):
         Eangle = np.array([Ex, Ey, Ez])
         phiE = np.arccos(np.dot(diff, Eangle) / dist)
 
-        # pdf = evalPdf(spline, dist, phiE, tgrid)
-        dist_for_pdf = 20.0
-        phiE_for_pdf = 0.3
-        pdf = evalPdf(spline, dist_for_pdf, phiE_for_pdf, tgrid)
+        pdf = evalPdf(spline, dist, phiE, tgrid)
+        # dist_for_pdf = 20.0
+        # phiE_for_pdf = 0.3
+        # pdf = evalPdf(spline, dist_for_pdf, phiE_for_pdf, tgrid)
         # pdf = norm.pdf(tgrid)
         pdf = np.clip(pdf, 0, None)
         tot = pdf.sum()
@@ -96,20 +98,21 @@ def resample(frame):
         ns = simclasses.I3CompressedPhotonSeries()
         rows = []
         for p in series:
-            p_pos = dataclasses.I3Position(Epos.x + 20, Epos.y, Epos.z)
-            p_angle = dataclasses.I3Direction(zenith + 0.3, azimuth)
-            old_tres = phys_services.I3Calculator.time_residual(
-                electron, pos, p.time, N_GROUP, N_PHASE
-            )
+            # p_pos = dataclasses.I3Position(Epos.x + 20, Epos.y, Epos.z)
+            # p_angle = dataclasses.I3Direction(zenith + 0.3, azimuth)
+            # old_tres = phys_services.I3Calculator.time_residual(
+            #     electron, pos, p.time, N_GROUP, N_PHASE
+            # )
+            old_tres = p.time - electron.time - 1.34*dist / c * 1e9
             new_tres = float(np.interp(rng.random(), cdf, tgrid))
             rows.append(
                 (
-                    new_tres,
+                    p.time - old_tres + new_tres,
                     p.weight,
                     p.wavelength,
-                    p_angle.zenith,
-                    p_angle.azimuth,
-                    p_pos,
+                    p.dir.zenith,
+                    p.dir.azimuth,
+                    p.pos,
                 )
             )
             stats["pulses"] += 1
@@ -129,7 +132,6 @@ def resample(frame):
 
     # del frame['new_photons']
     frame["new_photons"] = new
-    # print(f"frame {frame['I3EventHeader'].event_id} Working")
     return True
 
 

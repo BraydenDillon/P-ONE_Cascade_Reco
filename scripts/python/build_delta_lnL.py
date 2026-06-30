@@ -56,7 +56,6 @@ def datacollect(frame):
             photon_pos = dompos + photon.pos
             xyz.append([photon_pos.x, photon_pos.y, photon_pos.z])
             t.append(photon.time)
-            # t.append(random.uniform(-30, 1400))
 
     return np.column_stack([xyz, t])
 
@@ -105,7 +104,7 @@ def Likelihood_3d(coords: np.array, Event: np.array):
     diff = coords[0:3] - event_xyz
     dr = np.linalg.norm(diff, axis=1)
     # Calculate Time Residual
-    dt = abs(coords[5] - event_t) - (1.34*dr/c * 1e9)
+    dt = event_t - coords[5] - (1.34*dr/c * 1e9)
     # dt = event_t
 
     # Construct Electron direction unit vector from zenith and azimuth
@@ -131,7 +130,7 @@ def Likelihood_3d(coords: np.array, Event: np.array):
 def minimizer(guess, event, function=Likelihood):
     # Guess should be xyzt
     minimized = optimize.minimize(
-        function, x0=guess, args=(event), method="Nelder-Mead", tol=1e-3
+        function, x0=guess, args=(event), method="Nelder-Mead", tol=1e-5
     )
     return minimized
 
@@ -149,7 +148,7 @@ def evaluate_frame(frame):
                 ]
             )
             func = Likelihood
-        if Ndim == "3d":
+        elif Ndim == "3d":
             truth = np.array(
                 [
                     frame["I3MCTree"][1].pos.x,
@@ -183,4 +182,4 @@ tray.Execute()
 tray.Finish()
 print("Tray Finished")
 ary = np.array(delta_logL)
-np.save("/mnt/scratch/dillonb5/sampled_logL_3d/delta_ary_" + runnumber + ".npy", ary)
+np.save("/mnt/scratch/dillonb5/sampled_logL_byhand/delta_ary_" + runnumber + ".npy", ary)

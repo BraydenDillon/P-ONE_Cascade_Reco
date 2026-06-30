@@ -11,8 +11,8 @@ import numpy.random as random
 from scripts.python.SplineEval import evalLogPdf, evalPdf
 from scipy.stats import norm
 
-gcd = dataio.I3File("../gcdfile/PONE_800mGrid.i3.gz")
-splinefit_3d = photospline.SplineTable("../fits/splinelog_3D.fits")
+gcd = dataio.I3File("/mnt/home/dillonb5/cascades/gcdfile/PONE_800mGrid.i3.gz")
+splinefit_3d = photospline.SplineTable("/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits")
 for frame in gcd:
     gcdframe = frame
     break
