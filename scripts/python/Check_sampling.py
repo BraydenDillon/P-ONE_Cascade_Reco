@@ -67,8 +67,7 @@ def compare_spline(fixed_coords: np.array, spline, frames) -> None:
     # fixed_coords has shape 2, and should be [dr, dphi]
     # should be able to take either single frame or list of frames
     dR, dphi = fixed_coords
-    dr_range = [dR - 1, dR + 1]
-    dphi_range = [dphi - 0.1, dphi + 0.1]
+    
     vals_in_bin = np.array([])
     # pvalues = np.array([])
     i = 0
