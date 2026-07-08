@@ -1,0 +1,17 @@
+#!/bin/bash --login
+
+#SBATCH --job-name=mmsreco
+#SBATCH --array=0-100
+#SBATCH --ntasks=1
+#SBATCH --time=24:00:00
+#SBATCH --cpus-per-task=1
+#SBATCH --error=err/%x-%j.err
+#SBATCH --mem-per-cpu=16G
+#SBATCH --output=out/%x-%j.out
+
+echo "Running MMSReco minimization"
+
+cd /mnt/home/dillonb5/cascades/scripts
+eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.4.2/setup.sh`
+
+/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/python/mmsreco_test.py -i /mnt/scratch/dillonb5/sampled_data_3d/new_ -r $SLURM_ARRAY_TASK_ID
