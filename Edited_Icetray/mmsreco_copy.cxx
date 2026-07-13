@@ -15,6 +15,7 @@
 #include <dataclasses/status/I3DOMStatus.h>
 #include <dataclasses/physics/I3Particle.h>
 
+
 #include <phys-services/I3Calculator.h>
 #include <phys-services/I3RandomService.h>
 
@@ -23,6 +24,8 @@
 #include <cmath>
 
 #include <photospline/splinetable.h>
+#include <fstream>
+#include <ios>
 
 double C = 299792458; // I3constant
 
@@ -89,6 +92,9 @@ MMSLikelihood::SetEvent(const I3Frame &fr)
 	geo_ = fr.Get<I3GeometryConstPtr>(); // maybe assert
 }
 
+std::ofstream outfile("tracking.csv", std::ios::app);
+
+
 double
 MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 {
@@ -107,7 +113,7 @@ MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 		
 		
 		I3Position cherenkov_emission_point;
-		double t_direct=0, dist=0, Ephi=0;
+		double t_direct=0, dist=0, Ephi=0, dphi=0;
 		// cherenkovcalc only works for tracks
 		// I3Calculator::CherenkovCalc(part,
 		//     geo_it->second.position, cherenkov_emission_point,
@@ -115,37 +121,42 @@ MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 		//     1.35557, 1.34 /* fiducial group and phase n */);
 		
 		// calculate distance by hand
-		I3Position diff = part.GetPos() - geo_it->second.position; // Check this, need magnitude?
+		I3Position diff =  -geo_it->second.position + part.GetPos(); // Check this, need magnitude?
 
-		dist += diff.Magnitude(); // work in cpp?
+		dist += diff.Magnitude(); 
 		
 		t_direct += part.GetTime() + 1.34*dist / I3Constants::c;
 		// Look at documentation to figure out syntax
 
 		Ephi = acos((part.GetDir() * diff) / dist);
 		// dataclasses.I3Direction Eangle = dataclasses.I3Direction([Ex, Ey, Ez])
+		dphi = acos(((-1*geo_it->second.GetDirection()) * diff) / dist);
+		
 
 		for(const auto& pulse : p.second){ // for photon in compressedphotonseries
-			double splinecoords[3] = {dist, Ephi, pulse.GetTime() - t_direct}; // edited splinecoords array, need to define Ephi
+			double splinecoords[4] = {dist, Ephi, dphi, pulse.GetTime() - t_direct}; // edited splinecoords array, need to define Ephi
 			double pdf = spline_table_(splinecoords);
 			
 			if (!noise_) {
 				if (pdf != 0) {
 					llh += pdf; // Expects log pdf
+					outfile << '\n' << -pdf << ", "  << dist << ", " << Ephi << ", " << dphi << ", "<< pulse.GetTime() - t_direct << ", "<< part.GetPos().GetX() << ", " << part.GetPos().GetY() << ", " <<part.GetPos().GetZ() << ", " << part.GetTime() << ", " << part.GetDir().GetZenith() << ", " << part.GetDir().GetAzimuth();
+					// std::cout<< pdf <<std::endl;
 					continue;
 				}
 				else {
 					llh += -30;
+					outfile << '\n' << -30 << ", "  << dist << ", " << Ephi << ", " <<dphi<<', ' << pulse.GetTime() - t_direct << ", "<< part.GetPos().GetX() << ", " << part.GetPos().GetY() << ", " <<part.GetPos().GetZ() << ", " << part.GetTime() << ", " << part.GetDir().GetZenith() << ", " << part.GetDir().GetAzimuth();
+
 				}
 			}
 			
-			//std::cout<< "distance: " << dist << "Ephi: " << Ephi << "time: " <<  pulse.GetTime() - t_direct << std::endl;
-
 		}
 		//std::cout<< "llh: " << llh << std::endl;
 	}
-	//std::cout<< llh <<std::endl;
-	return -1 * llh;
+	//outfile << '\n' << -llh<< ' ' << part.GetPos().GetX() << ' ' << part.GetPos().GetY() << ' ' <<part.GetPos().GetZ() << ' ' << part.GetTime() << ' ' << part.GetDir().GetZenith() << ' ' << part.GetDir().GetAzimuth() << '\n';
+	// Appears that Gulliver framework expects a negative number for llh, which it then inverts to minimize later. 
+	return llh;
 }
 
 unsigned int
