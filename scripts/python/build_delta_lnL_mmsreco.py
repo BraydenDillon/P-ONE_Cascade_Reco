@@ -1,0 +1,60 @@
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(".."))
+import photospline
+from icecube import dataio, dataclasses, icetray, gulliver, simclasses, phys_services
+import numpy as np
+from scipy import optimize, integrate
+import argparse
+from scripts.python.SplineEval import evalPdf
+import random
+
+parser = argparse.ArgumentParser(
+    description="Takes I3photons and I3Electrons from simulation files to read out positional data"
+)
+parser.add_argument(
+    "-i", "--infile", default="/mnt/scratch/dillonb5/mmsreco_sampled/llhfit_conv_stepped_"
+)
+parser.add_argument("-r", "--runnumber", type=int, default=1)
+
+args = parser.parse_args()
+runnumber = -999
+if args.runnumber < 10:
+    runnumber = "00" + str(args.runnumber)
+elif args.runnumber < 100:
+    runnumber = "0" + str(args.runnumber)
+else:
+    runnumber = str(args.runnumber)
+infile = args.infile + runnumber + ".i3.zst"
+
+delta_logL = []
+
+tray = icetray.I3Tray()
+tray.AddModule("I3Reader", "reader", FilenameList=[infile])
+
+
+def calculate_dlnL(frame):
+    if (len(frame['new_photons']) != 0) and (len(frame['I3MCTree']) != 0):
+        if not np.isnan(frame['LLHFit_step5FitParams'].logl):
+            bestfit = frame['LLHFit_step5FitParams'].logl
+        elif not np.isnan(frame['LLHFit_step4FitParams'].logl):
+            bestfit = frame['LLHFit_step4FitParams'].logl
+        elif not np.isnan(frame['LLHFit_step3FitParams'].logl):
+            bestfit = frame['LLHFit_step3FitParams'].logl
+        elif not np.isnan(frame['LLHFit_step2FitParams'].logl):
+            bestfit = frame['LLHFit_step2FitParams'].logl
+        elif not np.isnan(frame['LLHFit_step1FitParams'].logl):
+            bestfit = frame['LLHFit_step1FitParams'].logl
+        else:
+            return
+
+        delta_logL.append(frame['LLHFit_mctruth'].logl - bestfit)
+
+tray.AddModule(calculate_dlnL, Streams = [icetray.I3Frame.Physics])
+
+tray.Execute()
+tray.Finish()
+ary = np.array(delta_logL)
+np.save("/mnt/scratch/dillonb5/mmsreco_logL/delta_ary_test3_" + runnumber +".npy", ary)
+        

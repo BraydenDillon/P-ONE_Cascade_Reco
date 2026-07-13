@@ -101,7 +101,7 @@ def Likelihood_3d(coords: np.array, Event: np.array):
     event_t = Event[:, 3]
 
     # Calculate Displacement Magnitude
-    diff = coords[0:3] - event_xyz
+    diff = -coords[0:3] + event_xyz
     dr = np.linalg.norm(diff, axis=1)
     # Calculate Time Residual
     dt = event_t - coords[5] - (1.34*dr/c * 1e9)
@@ -165,7 +165,7 @@ def evaluate_frame(frame):
             print("Error: Ndim must be either '3d' or '2d'")
             return True
         model = minimizer(truth, EventData, func)
-        model_likelihood = func(model["x"], EventData)
+        model_likelihood = frame['LLHFitFitParams']
         truth_likelihood = func(truth, EventData)
         delta_logL.append(
             [truth_likelihood - model_likelihood, len(frame["new_photons"])]

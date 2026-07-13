@@ -9,14 +9,24 @@ icetray.load("mmsreco")
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-i", "--infile")
+parser.add_argument("-i", "--infile", default="/mnt/scratch/dillonb5/cdf_per_photon/new_")
+parser.add_argument("-r", "--runnumber", type=int, default=1)
 parser.add_argument(
     "-g", "--gcdfile", default="/mnt/home/dillonb5/cascades/gcdfile/PONE_800mGrid.i3.gz"
 )
+parser.add_argument('-o', "--outfile", default = "/mnt/scratch/dillonb5/mmsreco_sampled/llhfit_invert_test_")
 
 args = parser.parse_args()
-infile = args.infile
+runnumber = -999
+if args.runnumber < 10:
+    runnumber = "00" + str(args.runnumber)
+elif args.runnumber < 100:
+    runnumber = "0" + str(args.runnumber)
+else:
+    runnumber = str(args.runnumber)
+infile = args.infile + runnumber + ".i3.zst"
 gcdfile = args.gcdfile
+outfile = args.outfile + runnumber + ".i3.zst"
 
 tray = I3Tray()
 tray.AddModule("I3Reader", "reader", Filenamelist=[gcdfile, infile])
@@ -31,14 +41,14 @@ def mctruth(fr):
 tray.Add(mctruth, Streams=[icetray.I3Frame.DAQ])
 
 
-pulses = "I3Photons"
+pulses = "new_photons"
 seed = "MCTruth"
-tray.AddService("I3BasicSeedServiceFactory", "seed", FirstGuess=seed)
+tray.AddService("I3BasicSeedServiceFactory", "seed1", FirstGuess=seed)
 tray.AddService(
     "I3GSLSimplexFactory",
     "minimizeit",
-    Tolerance=0.01,
-    SimplexTolerance=0.01,
+    Tolerance=0.001,
+    SimplexTolerance=0.001,
     MaxIterations=50000,
 )
 tray.AddService(
@@ -48,27 +58,147 @@ tray.AddService(
     StepY=10 * I3Units.m,
     StepZ=10 * I3Units.m,
     StepT=10 * I3Units.ns,
-    StepZenith=0.3 * I3Units.deg,
-    StepAzimuth=0.3 * I3Units.deg,
+    StepZenith=0.7 * I3Units.deg,
+    StepAzimuth=0.7 * I3Units.deg,
 )  # , BoundsZenith=[0, 180*I3Units.degree], BoundsAzimuth=[0, 360*I3Units.degree])
+
+# tray.AddService("I3HalfSphereParametrizationFactory", "simpleparam",
+#         DirectionStepsize = 0.3 * I3Units.deg,
+#         VertexStepsize = 5 * I3Units.m,
+#         TimeStepsize = 1 * I3Units.ns)
+
 tray.AddService(
     "MMSLikelihoodFactory",
-    "mms",
+    "mms_step1",
     InputPhotons=pulses,
     SplineTablePath="/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits",
     ExpectNoise=False,
+    ConvolutionWidth=35.0
 )
 tray.AddModule(
     "I3SimpleFitter",
-    "LLHFit",
-    SeedService="seed",
+    "LLHFit_step1",
+    SeedService="seed1",
     Parametrization="simpleparam",
-    LogLikelihood="mms",
+    LogLikelihood="mms_step1",
     Minimizer="minimizeit",
     If=lambda frame: pulses in frame and seed in frame,
-    OutputName="LLHFit",
+    OutputName="LLHFit_step1",
 )
 
-tray.AddModule("I3Writer", Filename="/mnt/scratch/dillonb5/mmsreco_test/test6.i3.gz")
-tray.Execute(50)
+#########################################################################################
+
+tray.AddService(
+    "I3BasicSeedServiceFactory", "seed2", firstguess = "LLHFit_step1"
+)
+tray.AddService(
+    "MMSLikelihoodFactory",
+    "mms_step2",
+    InputPhotons=pulses,
+    SplineTablePath="/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits",
+    ExpectNoise=False,
+    ConvolutionWidth=20.0
+)
+
+tray.AddModule(
+    "I3SimpleFitter",
+    "LLHFit_step2",
+    SeedService="seed2",
+    Parametrization="simpleparam",
+    LogLikelihood="mms_step2",
+    Minimizer="minimizeit",
+    If=lambda frame: pulses in frame and 'LLHFit_step1' in frame,
+    OutputName="LLHFit_step2"
+)
+
+########################################################################################
+
+tray.AddService(
+    "I3BasicSeedServiceFactory", "seed3", firstguess = "LLHFit_step2"
+)
+tray.AddService(
+    "MMSLikelihoodFactory",
+    "mms_step3",
+    InputPhotons=pulses,
+    SplineTablePath="/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits",
+    ExpectNoise=False,
+    ConvolutionWidth=10.0
+)
+
+tray.AddModule(
+    "I3SimpleFitter",
+    "LLHFit_step3",
+    SeedService="seed3",
+    Parametrization="simpleparam",
+    LogLikelihood="mms_step3",
+    Minimizer="minimizeit",
+    If=lambda frame: pulses in frame and 'LLHFit_step2' in frame,
+    OutputName="LLHFit_step3"
+)
+
+#####################################################################################
+
+tray.AddService(
+    "I3BasicSeedServiceFactory", "seed4", firstguess = "LLHFit_step3"
+)
+tray.AddService(
+    "MMSLikelihoodFactory",
+    "mms_step4",
+    InputPhotons=pulses,
+    SplineTablePath="/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits",
+    ExpectNoise=False,
+    ConvolutionWidth=5.0
+)
+
+tray.AddModule(
+    "I3SimpleFitter",
+    "LLHFit_step4",
+    SeedService="seed4",
+    Parametrization="simpleparam",
+    LogLikelihood="mms_step4",
+    Minimizer="minimizeit",
+    If=lambda frame: pulses in frame and 'LLHFit_step3' in frame,
+    OutputName="LLHFit_step4"
+)
+
+#####################################################################################
+
+tray.AddService(
+    "I3BasicSeedServiceFactory", "seed5", firstguess = "LLHFit_step4"
+)
+tray.AddService(
+    "MMSLikelihoodFactory",
+    "mms_step5",
+    InputPhotons=pulses,
+    SplineTablePath="/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits",
+    ExpectNoise=False,
+    ConvolutionWidth=0
+)
+
+tray.AddModule(
+    "I3SimpleFitter",
+    "LLHFit_step5",
+    SeedService="seed5",
+    Parametrization="simpleparam",
+    LogLikelihood="mms_step5",
+    Minimizer="minimizeit",
+    If=lambda frame: pulses in frame and 'LLHFit_step4' in frame,
+    OutputName="LLHFit_step5"
+)
+
+##################################################################################################
+
+tray.AddService("MMSLikelihoodFactory", "mmsreco_truth",
+                InputPhotons=pulses,  ExpectNoise=False, ConvolutionWidth=0.0,
+                SplineTablePath="/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits")
+
+tray.AddModule("I3LogLikelihoodCalculator", "LLHFit_mctruth",
+        LogLikelihoodService = "mmsreco_truth",
+        FitName              = "MCTruth",
+        NFreeParameters      = 6,
+        If = lambda frame: pulses in frame and "MCTruth" in frame)
+
+
+tray.AddModule("I3Writer", Filename=outfile)
+tray.Execute()
 tray.Finish()

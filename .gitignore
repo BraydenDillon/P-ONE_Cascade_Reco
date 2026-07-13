@@ -8,3 +8,4 @@ scripts/core.*
 *.err
 *.out
 fits/
+scripts/tracking.txt
