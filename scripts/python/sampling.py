@@ -3,7 +3,7 @@ import numpy as np
 import sys
 import os
 
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("/mnt/home/dillonb5/cascades/"))
 from scripts.python.SplineEval import evalPdf
 import photospline
 import argparse
@@ -18,7 +18,7 @@ parser.add_argument(
 )
 parser.add_argument("-r", "--runnumber", type=int, default=50)
 parser.add_argument(
-    "-o", "--outfile", default="/mnt/scratch/dillonb5/cdf_per_photon/new_"
+    "-o", "--outfile", default="/mnt/scratch/dillonb5/const_tres/new_"
 )
 args = parser.parse_args()
 runnumber = -999
@@ -68,11 +68,11 @@ def resample(frame):
             continue
         pos = geo[omkey].pos
         Epos = electron.pos
-        # diff = Epos - pos
-        # # dist = phys_services.I3Calculator.cherenkov_distance(
-        # #     electron, pos, N_GROUP, N_PHASE
-        # # )
-        # dist = np.linalg.norm(diff)
+        diff = Epos - pos
+        # dist = phys_services.I3Calculator.cherenkov_distance(
+        #     electron, pos, N_GROUP, N_PHASE
+        # )
+        dist = np.linalg.norm(diff)
         # zenith = electron.dir.zenith
         # azimuth = electron.dir.azimuth
         # Ex = np.sin(zenith) * np.cos(azimuth)
@@ -81,11 +81,11 @@ def resample(frame):
         # Eangle = np.array([Ex, Ey, Ez])
         # phiE = np.arccos(np.dot(diff, Eangle) / dist)
 
-        # pdf = evalPdf(spline, dist, phiE, tgrid)
-        # # dist_for_pdf = 20.0
-        # # phiE_for_pdf = 0.3
-        # # pdf = evalPdf(spline, dist_for_pdf, phiE_for_pdf, tgrid)
-        # # pdf = norm.pdf(tgrid)
+        #pdf = evalPdf(spline, dist, phiE, tgrid)
+        # dist_for_pdf = 20.0
+        # phiE_for_pdf = 0.3
+        # pdf = evalPdf(spline, dist_for_pdf, phiE_for_pdf, tgrid)
+        # pdf = norm.pdf(tgrid)
         # pdf = np.clip(pdf, 0, None)
         # tot = pdf.sum()
         # if not np.isfinite(tot) or tot <= 0:
@@ -103,38 +103,38 @@ def resample(frame):
             # old_tres = phys_services.I3Calculator.time_residual(
             #     electron, pos, p.time, N_GROUP, N_PHASE
             # )
-            diff = Epos - pos + p.pos
+            # diff = Epos - pos + p.pos
         # dist = phys_services.I3Calculator.cherenkov_distance(
         #     electron, pos, N_GROUP, N_PHASE
         # )
-            dist = np.linalg.norm(diff)
-            zenith = electron.dir.zenith
-            azimuth = electron.dir.azimuth
-            Ex = np.sin(zenith) * np.cos(azimuth)
-            Ey = np.sin(zenith) * np.sin(azimuth)
-            Ez = np.cos(zenith)
-            Eangle = np.array([Ex, Ey, Ez])
-            phiE = np.arccos(np.dot(diff, Eangle) / dist)
+            # dist = np.linalg.norm(diff)
+            # zenith = electron.dir.zenith
+            # azimuth = electron.dir.azimuth
+            # Ex = np.sin(zenith) * np.cos(azimuth)
+            # Ey = np.sin(zenith) * np.sin(azimuth)
+            # Ez = np.cos(zenith)
+            # Eangle = np.array([Ex, Ey, Ez])
+            # phiE = np.arccos(np.dot(diff, Eangle) / dist)
 
-            pdf = evalPdf(spline, dist, phiE, tgrid)
+            # pdf = evalPdf(spline, dist, phiE, tgrid)
         # dist_for_pdf = 20.0
         # phiE_for_pdf = 0.3
         # pdf = evalPdf(spline, dist_for_pdf, phiE_for_pdf, tgrid)
         # pdf = norm.pdf(tgrid)
-            pdf = np.clip(pdf, 0, None)
-            tot = pdf.sum()
-            if not np.isfinite(tot) or tot <= 0:
-                stats["doms_skipped"] += 1
-                new[omkey] = series  # keep original times, nothing to sample from
-                continue
-            cdf = np.cumsum(pdf)
-            cdf /= cdf[-1]
+            # pdf = np.clip(pdf, 0, None)
+            # tot = pdf.sum()
+            # if not np.isfinite(tot) or tot <= 0:
+            #     stats["doms_skipped"] += 1
+            #     new[omkey] = series  # keep original times, nothing to sample from
+            #     continue
+            # cdf = np.cumsum(pdf)
+            # cdf /= cdf[-1]
 
-            old_tres = p.time - electron.time - 1.34*dist / c * 1e9
-            new_tres = float(np.interp(rng.random(), cdf, tgrid))
+            old_tres = (p.time - electron.time) - (1.34*dist / dataclasses.I3Constants.c)
+            # new_tres = float(np.interp(rng.random(), cdf, tgrid))
             rows.append(
                 (
-                    p.time - old_tres + new_tres,
+                    p.time - old_tres + 10,
                     p.weight,
                     p.wavelength,
                     p.dir.zenith,

@@ -31,11 +31,16 @@ outfile = args.outfile + runnumber + ".i3.zst"
 tray = I3Tray()
 tray.AddModule("I3Reader", "reader", Filenamelist=[gcdfile, infile])
 tray.AddModule("I3NullSplitter", "Splitter")
-
+#splinepath = '/mnt/research/IceCube/jalabadz/iter_6.0_4D_I3Photons/spline_result/splinelog.fits'
+splinepath = '/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits'
 
 def mctruth(fr):
     fr["MCTruth"] = fr["I3MCTree"][1]
     fr["MCTruth"].fit_status = fr["MCTruth"].OK
+
+def mchadrons(fr):
+    fr["MCHadrons"] = fr["I3MCTree"][2]
+    fr["MCHadrons"].fit_status = fr["MCHadrons"].OK
 
 
 tray.Add(mctruth, Streams=[icetray.I3Frame.DAQ])
@@ -71,7 +76,7 @@ tray.AddService(
     "MMSLikelihoodFactory",
     "mms_step1",
     InputPhotons=pulses,
-    SplineTablePath="/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits",
+    SplineTablePath=splinepath,
     ExpectNoise=False,
     ConvolutionWidth=35.0
 )
@@ -95,7 +100,7 @@ tray.AddService(
     "MMSLikelihoodFactory",
     "mms_step2",
     InputPhotons=pulses,
-    SplineTablePath="/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits",
+    SplineTablePath=splinepath,
     ExpectNoise=False,
     ConvolutionWidth=20.0
 )
@@ -120,7 +125,7 @@ tray.AddService(
     "MMSLikelihoodFactory",
     "mms_step3",
     InputPhotons=pulses,
-    SplineTablePath="/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits",
+    SplineTablePath=splinepath,
     ExpectNoise=False,
     ConvolutionWidth=10.0
 )
@@ -145,7 +150,7 @@ tray.AddService(
     "MMSLikelihoodFactory",
     "mms_step4",
     InputPhotons=pulses,
-    SplineTablePath="/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits",
+    SplineTablePath=splinepath,
     ExpectNoise=False,
     ConvolutionWidth=5.0
 )
@@ -170,7 +175,7 @@ tray.AddService(
     "MMSLikelihoodFactory",
     "mms_step5",
     InputPhotons=pulses,
-    SplineTablePath="/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits",
+    SplineTablePath=splinepath,
     ExpectNoise=False,
     ConvolutionWidth=0
 )
@@ -190,7 +195,7 @@ tray.AddModule(
 
 tray.AddService("MMSLikelihoodFactory", "mmsreco_truth",
                 InputPhotons=pulses,  ExpectNoise=False, ConvolutionWidth=0.0,
-                SplineTablePath="/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits")
+                SplineTablePath=splinepath)
 
 tray.AddModule("I3LogLikelihoodCalculator", "LLHFit_mctruth",
         LogLikelihoodService = "mmsreco_truth",

@@ -90,15 +90,22 @@ MMSLikelihood::SetEvent(const I3Frame &fr)
 	photons_ = fr.Get<I3CompressedPhotonSeriesMapConstPtr>(photons_name_);
 	i3_assert(photons_);
 	geo_ = fr.Get<I3GeometryConstPtr>(); // maybe assert
+	i3_assert(geo_);
+	// will need to add module to create hadrons key in frame
+	hadrons_ = fr.Get<I3ParticleConstPtr>();
 }
 
-std::ofstream outfile("tracking.csv", std::ios::app);
+std::ofstream outfile("tracking.csv");
+//outfile<<"pdf contribution"<< ","<<'dr'<<","<<'Ephi'<<","<<"dphi"<<","<<"tres"<<","<<"eX"<<","<<"eY"<<","<<"eZ"<<","<<"eT"<<","<<"eZenith"<<","<<"eAzimuth"<<'\n';
 
 
 double
 MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 {
 	const I3Particle& part = *hypo.particle;
+	// How to resolve two cascades
+	// leave default assumption as Eminus as primary cascade, then check particle ID and if it comes from the hadrons we can just hard code the difference in direction
+	// fairly straightforward. Can assign values based on other particle in I3MCTree?
 	
 	
 	double llh = 0;
@@ -109,7 +116,9 @@ MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 		if(geo_it==geo_->omgeo.end())
 			log_fatal_stream(om << " not found in geometry");
 		
-		
+		if p.second.ID.MinorID == hadrons_.ID.MinorID{
+			part = hadrons;
+		}
 		
 		
 		I3Position cherenkov_emission_point;
@@ -121,7 +130,7 @@ MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 		//     1.35557, 1.34 /* fiducial group and phase n */);
 		
 		// calculate distance by hand
-		I3Position diff =  -geo_it->second.position + part.GetPos(); // Check this, need magnitude?
+		I3Position diff =  geo_it->second.position - part.GetPos(); // Check this, need magnitude?
 
 		dist += diff.Magnitude(); 
 		
@@ -134,7 +143,7 @@ MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 		
 
 		for(const auto& pulse : p.second){ // for photon in compressedphotonseries
-			double splinecoords[4] = {dist, Ephi, dphi, pulse.GetTime() - t_direct}; // edited splinecoords array, need to define Ephi
+			double splinecoords[4] = {dist, Ephi, dphi, pulse.GetTime() - t_direct}; 
 			double pdf = spline_table_(splinecoords);
 			
 			if (!noise_) {
@@ -146,7 +155,7 @@ MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 				}
 				else {
 					llh += -30;
-					outfile << '\n' << -30 << ", "  << dist << ", " << Ephi << ", " <<dphi<<', ' << pulse.GetTime() - t_direct << ", "<< part.GetPos().GetX() << ", " << part.GetPos().GetY() << ", " <<part.GetPos().GetZ() << ", " << part.GetTime() << ", " << part.GetDir().GetZenith() << ", " << part.GetDir().GetAzimuth();
+					outfile << '\n' << 30 << ", "  << dist << ", " << Ephi << ", " <<dphi<<", " << pulse.GetTime() - t_direct << ", "<< part.GetPos().GetX() << ", " << part.GetPos().GetY() << ", " <<part.GetPos().GetZ() << ", " << part.GetTime() << ", " << part.GetDir().GetZenith() << ", " << part.GetDir().GetAzimuth();
 
 				}
 			}
