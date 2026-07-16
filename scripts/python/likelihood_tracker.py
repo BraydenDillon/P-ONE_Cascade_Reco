@@ -30,6 +30,8 @@ outfile = args.outfile #+ runnumber + ".i3.zst"
 
 tray = I3Tray()
 tray.AddModule("I3Reader", "reader", Filenamelist=[gcdfile, infile])
+tray.AddModule("I3NullSplitter", "Splitter")
+
 
 splinepath = "/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits"
 #splinepath = "/mnt/research/IceCube/jalabadz/iter_6.0_4D_I3Photons/spline_result/splinelog.fits"
@@ -38,6 +40,11 @@ def lazyfilter(frame):
     if frame['I3EventHeader'].event_id != 22:
         return False
     return frame['I3EventHeader'].event_id == 22
+def mctruth(fr):
+    fr["MCTruth"] = fr["I3MCTree"][1]
+    fr["MCTruth"].fit_status = fr["MCTruth"].OK
+
+tray.AddModule(mctruth, streams = [icetray.I3Frame.DAQ])
 
 tray.AddModule(lazyfilter, streams = [icetray.I3Frame.Physics])
 

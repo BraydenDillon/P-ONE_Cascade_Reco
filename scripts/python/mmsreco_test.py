@@ -9,12 +9,12 @@ icetray.load("mmsreco")
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-i", "--infile", default="/mnt/scratch/dillonb5/cdf_per_photon/new_")
+parser.add_argument("-i", "--infile", default="/mnt/scratch/dillonb5/const_tres/new_")
 parser.add_argument("-r", "--runnumber", type=int, default=1)
 parser.add_argument(
     "-g", "--gcdfile", default="/mnt/home/dillonb5/cascades/gcdfile/PONE_800mGrid.i3.gz"
 )
-parser.add_argument('-o', "--outfile", default = "/mnt/scratch/dillonb5/mmsreco_sampled/llhfit_invert_test_")
+parser.add_argument('-o', "--outfile", default = "/mnt/scratch/dillonb5/mmsreco_garbage/llhfit_garbage_")
 
 args = parser.parse_args()
 runnumber = -999
@@ -78,7 +78,7 @@ tray.AddService(
     InputPhotons=pulses,
     SplineTablePath=splinepath,
     ExpectNoise=False,
-    ConvolutionWidth=35.0
+    ConvolutionWidth=0
 )
 tray.AddModule(
     "I3SimpleFitter",
@@ -93,103 +93,103 @@ tray.AddModule(
 
 #########################################################################################
 
-tray.AddService(
-    "I3BasicSeedServiceFactory", "seed2", firstguess = "LLHFit_step1"
-)
-tray.AddService(
-    "MMSLikelihoodFactory",
-    "mms_step2",
-    InputPhotons=pulses,
-    SplineTablePath=splinepath,
-    ExpectNoise=False,
-    ConvolutionWidth=20.0
-)
+# tray.AddService(
+#     "I3BasicSeedServiceFactory", "seed2", firstguess = "LLHFit_step1"
+# )
+# tray.AddService(
+#     "MMSLikelihoodFactory",
+#     "mms_step2",
+#     InputPhotons=pulses,
+#     SplineTablePath=splinepath,
+#     ExpectNoise=False,
+#     ConvolutionWidth=20.0
+# )
 
-tray.AddModule(
-    "I3SimpleFitter",
-    "LLHFit_step2",
-    SeedService="seed2",
-    Parametrization="simpleparam",
-    LogLikelihood="mms_step2",
-    Minimizer="minimizeit",
-    If=lambda frame: pulses in frame and 'LLHFit_step1' in frame,
-    OutputName="LLHFit_step2"
-)
+# tray.AddModule(
+#     "I3SimpleFitter",
+#     "LLHFit_step2",
+#     SeedService="seed2",
+#     Parametrization="simpleparam",
+#     LogLikelihood="mms_step2",
+#     Minimizer="minimizeit",
+#     If=lambda frame: pulses in frame and 'LLHFit_step1' in frame,
+#     OutputName="LLHFit_step2"
+# )
 
-########################################################################################
+# ########################################################################################
 
-tray.AddService(
-    "I3BasicSeedServiceFactory", "seed3", firstguess = "LLHFit_step2"
-)
-tray.AddService(
-    "MMSLikelihoodFactory",
-    "mms_step3",
-    InputPhotons=pulses,
-    SplineTablePath=splinepath,
-    ExpectNoise=False,
-    ConvolutionWidth=10.0
-)
+# tray.AddService(
+#     "I3BasicSeedServiceFactory", "seed3", firstguess = "LLHFit_step2"
+# )
+# tray.AddService(
+#     "MMSLikelihoodFactory",
+#     "mms_step3",
+#     InputPhotons=pulses,
+#     SplineTablePath=splinepath,
+#     ExpectNoise=False,
+#     ConvolutionWidth=10.0
+# )
 
-tray.AddModule(
-    "I3SimpleFitter",
-    "LLHFit_step3",
-    SeedService="seed3",
-    Parametrization="simpleparam",
-    LogLikelihood="mms_step3",
-    Minimizer="minimizeit",
-    If=lambda frame: pulses in frame and 'LLHFit_step2' in frame,
-    OutputName="LLHFit_step3"
-)
+# tray.AddModule(
+#     "I3SimpleFitter",
+#     "LLHFit_step3",
+#     SeedService="seed3",
+#     Parametrization="simpleparam",
+#     LogLikelihood="mms_step3",
+#     Minimizer="minimizeit",
+#     If=lambda frame: pulses in frame and 'LLHFit_step2' in frame,
+#     OutputName="LLHFit_step3"
+# )
 
-#####################################################################################
+# #####################################################################################
 
-tray.AddService(
-    "I3BasicSeedServiceFactory", "seed4", firstguess = "LLHFit_step3"
-)
-tray.AddService(
-    "MMSLikelihoodFactory",
-    "mms_step4",
-    InputPhotons=pulses,
-    SplineTablePath=splinepath,
-    ExpectNoise=False,
-    ConvolutionWidth=5.0
-)
+# tray.AddService(
+#     "I3BasicSeedServiceFactory", "seed4", firstguess = "LLHFit_step3"
+# )
+# tray.AddService(
+#     "MMSLikelihoodFactory",
+#     "mms_step4",
+#     InputPhotons=pulses,
+#     SplineTablePath=splinepath,
+#     ExpectNoise=False,
+#     ConvolutionWidth=5.0
+# )
 
-tray.AddModule(
-    "I3SimpleFitter",
-    "LLHFit_step4",
-    SeedService="seed4",
-    Parametrization="simpleparam",
-    LogLikelihood="mms_step4",
-    Minimizer="minimizeit",
-    If=lambda frame: pulses in frame and 'LLHFit_step3' in frame,
-    OutputName="LLHFit_step4"
-)
+# tray.AddModule(
+#     "I3SimpleFitter",
+#     "LLHFit_step4",
+#     SeedService="seed4",
+#     Parametrization="simpleparam",
+#     LogLikelihood="mms_step4",
+#     Minimizer="minimizeit",
+#     If=lambda frame: pulses in frame and 'LLHFit_step3' in frame,
+#     OutputName="LLHFit_step4"
+# )
 
-#####################################################################################
+# #####################################################################################
 
-tray.AddService(
-    "I3BasicSeedServiceFactory", "seed5", firstguess = "LLHFit_step4"
-)
-tray.AddService(
-    "MMSLikelihoodFactory",
-    "mms_step5",
-    InputPhotons=pulses,
-    SplineTablePath=splinepath,
-    ExpectNoise=False,
-    ConvolutionWidth=0
-)
+# tray.AddService(
+#     "I3BasicSeedServiceFactory", "seed5", firstguess = "LLHFit_step4"
+# )
+# tray.AddService(
+#     "MMSLikelihoodFactory",
+#     "mms_step5",
+#     InputPhotons=pulses,
+#     SplineTablePath=splinepath,
+#     ExpectNoise=False,
+#     ConvolutionWidth=0
+# )
 
-tray.AddModule(
-    "I3SimpleFitter",
-    "LLHFit_step5",
-    SeedService="seed5",
-    Parametrization="simpleparam",
-    LogLikelihood="mms_step5",
-    Minimizer="minimizeit",
-    If=lambda frame: pulses in frame and 'LLHFit_step4' in frame,
-    OutputName="LLHFit_step5"
-)
+# tray.AddModule(
+#     "I3SimpleFitter",
+#     "LLHFit_step5",
+#     SeedService="seed5",
+#     Parametrization="simpleparam",
+#     LogLikelihood="mms_step5",
+#     Minimizer="minimizeit",
+#     If=lambda frame: pulses in frame and 'LLHFit_step4' in frame,
+#     OutputName="LLHFit_step5"
+# )
 
 ##################################################################################################
 
