@@ -9,17 +9,19 @@ import photospline
 import argparse
 from scipy.stats import norm
 
+
+## Set up argument parsing 
 parser = argparse.ArgumentParser(description="Takes a .i3 file and a gcd file")
 parser.add_argument(
     "-i", "--infile", default="/mnt/home/dillonb5/cascades/sacrifice_data/gen_"
-)
+) # format should be the name of the file without the run number or .i3.zst extension, e.g. gen_ for gen_001.i3.zst
 parser.add_argument(
     "-g", "--gcdfile", default="/mnt/home/dillonb5/cascades/gcdfile/PONE_800mGrid.i3.gz"
 )
-parser.add_argument("-r", "--runnumber", type=int, default=50)
+parser.add_argument("-r", "--runnumber", type=int, default=50) 
 parser.add_argument(
-    "-o", "--outfile", default="/mnt/scratch/dillonb5/const_tres/new_"
-)
+    "-o", "--outfile", default="/mnt/scratch/dillonb5/sampled_data/new_"
+) 
 args = parser.parse_args()
 runnumber = -999
 if args.runnumber < 10:
@@ -28,113 +30,77 @@ elif args.runnumber < 100:
     runnumber = "0" + str(args.runnumber)
 else:
     runnumber = str(args.runnumber)
-infile = args.infile + runnumber + ".i3.zst"
+infile = args.infile + runnumber + ".i3.zst" # This is where input file is completed to readable format
 gcdfile = args.gcdfile
-outfile = args.outfile + runnumber + ".i3.zst"
+outfile = args.outfile + runnumber + ".i3.zst" # Outfile is treated the same to copy formatting so that it can be tracked back to the infile
 
 
 tray = icetray.I3Tray()
-tray.AddModule("I3Reader", "reader", FilenameList=[gcdfile, infile])
+tray.AddModule("I3Reader", "reader", FilenameList=[gcdfile, infile]) # Reads through all frames in FilenameList,
+                                                                     # All Tray Modules will be executed on each frame read by I3Reader
 
-c = 299792458
 
-spline = photospline.SplineTable("/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits")
-tgrid = np.linspace(min(spline.knots[-1]), max(spline.knots[-1]), 1000)
+spline = photospline.SplineTable("/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits") # Load in spline fit
+tgrid = np.linspace(min(spline.knots[-1]), max(spline.knots[-1]), 1000) # Define tgrid for interpolation of spline fit for sampling
 # tgrid = np.linspace(-5, 5, 1000)
 N_GROUP = 1.34
 N_PHASE = 1.35557
 
-rng = np.random.default_rng()
+rng = np.random.default_rng() # Initialize random number generator for sampling from spline fit
 
 
-def resample(frame):
+def resample(frame): # Sampling function. For each frame samples random value from cdf of spline fit and adds new object with new time
     stats = dict(events=0, doms=0, pulses=0, doms_clamped=0, doms_skipped=0, bad_doms=0)
     if "I3Photons" not in frame or "I3MCTree" not in frame:
-        return True
+        return True # Returns True and does not execute if there are not photons or no particles
     electron = dataclasses.I3Particle(frame["I3MCTree"][1])
-    electron.shape = dataclasses.I3Particle.Cascade
-    # mu.shape = dataclasses.I3Particle.InfiniteTrack
-    geo = frame["I3ModuleGeoMap"]
-    old = frame["I3Photons"]
-    omkeys = frame["I3Photons"].keys()
-    new = simclasses.I3CompressedPhotonSeriesMap()
+    electron.shape = dataclasses.I3Particle.Cascade # Not sure if needed, but explicitely sets the shape of the particle
+    geo = frame["I3ModuleGeoMap"] # Grabs geo module map from gcd file
+    old = frame["I3Photons"] # Old is the original I3Photons object, which is iterated over and resampled from cdf
+    new = simclasses.I3CompressedPhotonSeriesMap() # Initializes new compressed photon series map
     stats["events"] += 1
 
-    for omkey, series in old.items():
+    for omkey, series in old.items(): # Iterates over old photons, using both the omkey and the series of photons associated
         stats["doms"] += 1
         if omkey not in geo:
-            new[omkey] = series
+            new[omkey] = series # If omkey is not found in geo module map, keep original times
             stats["bad_doms"] += 1
             continue
-        pos = geo[omkey].pos
-        Epos = electron.pos
-        diff = Epos - pos
-        # dist = phys_services.I3Calculator.cherenkov_distance(
-        #     electron, pos, N_GROUP, N_PHASE
-        # )
-        dist = np.linalg.norm(diff)
-        # zenith = electron.dir.zenith
-        # azimuth = electron.dir.azimuth
-        # Ex = np.sin(zenith) * np.cos(azimuth)
-        # Ey = np.sin(zenith) * np.sin(azimuth)
-        # Ez = np.cos(zenith)
-        # Eangle = np.array([Ex, Ey, Ez])
-        # phiE = np.arccos(np.dot(diff, Eangle) / dist)
+        pos = geo[omkey].pos # Grabs position of omkey, I3Position vector
+        Epos = electron.pos # Grabs position of electron, I3Position vector
+        diff = Epos - pos # Displacement vector from optical module to electron
+        
+        dist = np.linalg.norm(diff) # Magnitude of displacement vector
+        # Construction of electron direction unit vector and calculation of angle between electron travel vector and displacement vector
+        zenith = electron.dir.zenith
+        azimuth = electron.dir.azimuth
+        Ex = np.sin(zenith) * np.cos(azimuth)
+        Ey = np.sin(zenith) * np.sin(azimuth)
+        Ez = np.cos(zenith)
+        Eangle = np.array([Ex, Ey, Ez])
+        phiE = np.arccos(np.dot(diff, Eangle) / dist)
 
-        #pdf = evalPdf(spline, dist, phiE, tgrid)
-        # dist_for_pdf = 20.0
-        # phiE_for_pdf = 0.3
-        # pdf = evalPdf(spline, dist_for_pdf, phiE_for_pdf, tgrid)
-        # pdf = norm.pdf(tgrid)
-        # pdf = np.clip(pdf, 0, None)
-        # tot = pdf.sum()
-        # if not np.isfinite(tot) or tot <= 0:
-        #     stats["doms_skipped"] += 1
-        #     new[omkey] = series  # keep original times, nothing to sample from
-        #     continue
-        # cdf = np.cumsum(pdf)
-        # cdf /= cdf[-1]
+        pdf = evalPdf(spline, dist, phiE, tgrid) # Evaluates the pdf (true pdf, not log) of the spline
+        
+        pdf = np.clip(pdf, 0, None) # Clips the pdf to be non-negative, as negative values are not valid for a pdf
+        tot = pdf.sum()
+        if not np.isfinite(tot) or tot <= 0:
+            stats["doms_skipped"] += 1
+            new[omkey] = series  # Keeps original times, nothing to sample from
+            continue
+        cdf = np.cumsum(pdf) # Calculates the cumulative distribution function
+        cdf /= cdf[-1] # Normalizes the cdf to be between 0 and 1
 
-        ns = simclasses.I3CompressedPhotonSeries()
+        ns = simclasses.I3CompressedPhotonSeries() # Initializes a new photonseries object to hold the resampled photons
         rows = []
-        for p in series:
-            # p_pos = dataclasses.I3Position(Epos.x + 20, Epos.y, Epos.z)
-            # p_angle = dataclasses.I3Direction(zenith + 0.3, azimuth)
-            # old_tres = phys_services.I3Calculator.time_residual(
-            #     electron, pos, p.time, N_GROUP, N_PHASE
-            # )
-            # diff = Epos - pos + p.pos
-        # dist = phys_services.I3Calculator.cherenkov_distance(
-        #     electron, pos, N_GROUP, N_PHASE
-        # )
-            # dist = np.linalg.norm(diff)
-            # zenith = electron.dir.zenith
-            # azimuth = electron.dir.azimuth
-            # Ex = np.sin(zenith) * np.cos(azimuth)
-            # Ey = np.sin(zenith) * np.sin(azimuth)
-            # Ez = np.cos(zenith)
-            # Eangle = np.array([Ex, Ey, Ez])
-            # phiE = np.arccos(np.dot(diff, Eangle) / dist)
+        for p in series: # Iterates over the original series of photons and samples new tres values from the cdf
+           
 
-            # pdf = evalPdf(spline, dist, phiE, tgrid)
-        # dist_for_pdf = 20.0
-        # phiE_for_pdf = 0.3
-        # pdf = evalPdf(spline, dist_for_pdf, phiE_for_pdf, tgrid)
-        # pdf = norm.pdf(tgrid)
-            # pdf = np.clip(pdf, 0, None)
-            # tot = pdf.sum()
-            # if not np.isfinite(tot) or tot <= 0:
-            #     stats["doms_skipped"] += 1
-            #     new[omkey] = series  # keep original times, nothing to sample from
-            #     continue
-            # cdf = np.cumsum(pdf)
-            # cdf /= cdf[-1]
-
-            old_tres = (p.time - electron.time) - (1.34*dist / dataclasses.I3Constants.c)
-            # new_tres = float(np.interp(rng.random(), cdf, tgrid))
-            rows.append(
+            old_tres = p.time - electron.time - 1.34*dist / dataclasses.I3Constants.c # Uses the old photons to calculate the actual time residual
+            new_tres = float(np.interp(rng.random(), cdf, tgrid)) # Ransomly samples a time residual from the cdf of the spline
+            rows.append( # Adds a new photon with the desired information to the rows list
                 (
-                    p.time - old_tres + 10,
+                    p.time - old_tres + new_tres,
                     p.weight,
                     p.wavelength,
                     p.dir.zenith,
@@ -144,7 +110,7 @@ def resample(frame):
             )
             stats["pulses"] += 1
         rows.sort(key=lambda r: r[0])
-        for t, w, lamb, zen, az, ph_pos in rows:
+        for t, w, lamb, zen, az, ph_pos in rows: # Creates new compressed photon with the information in rows, including new tres
             np_ = simclasses.I3CompressedPhoton()
             np_.time, np_.weight, np_.wavelength, np_.dir, np_.pos = (
                 t,
@@ -153,17 +119,17 @@ def resample(frame):
                 dataclasses.I3Direction(zen, az),
                 ph_pos,
             )
-            ns.append(np_)
-        new[omkey] = ns
+            ns.append(np_) # adds the new photons to the new series
+        new[omkey] = ns # assigns new series object to the same omkey in the new map
         # new[omkey] = rows
 
     # del frame['new_photons']
-    frame["new_photons"] = new
+    frame["new_photons"] = new # saves the new map to the frame
     return True
 
 
-tray.AddModule(resample, streams=[icetray.I3Frame.DAQ])
-tray.AddModule(
+tray.AddModule(resample, streams=[icetray.I3Frame.DAQ]) # Adds the resample module to the tray
+tray.AddModule( # Adds writer module, which actually writes new frames to the output file
     "I3Writer",
     filename=outfile,
     Streams=[icetray.I3Frame.DAQ],

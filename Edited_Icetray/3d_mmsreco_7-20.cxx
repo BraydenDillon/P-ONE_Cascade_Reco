@@ -67,6 +67,7 @@ MMSLikelihood::MMSLikelihood(const I3Context &ctx) : I3ServiceBase(ctx)
 void
 MMSLikelihood::Configure()
 {
+	std::cout<<"entered config"<<std::endl;
 	GetParameter("InputPhotons", photons_name_);
 	GetParameter("ExpectNoise", noise_);
 
@@ -87,23 +88,29 @@ MMSLikelihood::Configure()
 void
 MMSLikelihood::SetEvent(const I3Frame &fr)
 {
+	std::cout<<"entered SetEvent"<<std::endl;
 	photons_ = fr.Get<I3CompressedPhotonSeriesMapConstPtr>(photons_name_);
 	i3_assert(photons_);
 	geo_ = fr.Get<I3GeometryConstPtr>(); // maybe assert
 }
 
-// std::ofstream outfile("tracking.csv", std::ios::app);
-// outfile<<"pdf contribution"<<","<<'dr'<<","<<'Ephi'<<","<<"tres"<<","<<"eX"<<","<<"eY"<<","<<"eZ"<<","<<"eT"<<","<<"eZenith"<<","<<"eAzimuth"<<'\n';
+std::ofstream outfile("tracking.csv", std::ios::app);
+// outfile<<	"pdf contribution"<<","<<'dr'<<","<<'Ephi'<<","<<"tres"<<","<<"eX"<<","<<"eY"<<","<<"eZ"<<","<<"eT"<<","<<"eZenith"<<","<<"eAzimuth"<<'\n';
 
 
 double
 MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 {
 	const I3Particle& part = *hypo.particle;
-	
+	std::cout<<"testing. GetLogLikelihood at least started"<<std::endl;
 	
 	double llh = 0;
+	int count = 0;
 	for(const auto& p : *photons_){ // for compressedphotonseries in compressedphotonseriesmap
+		if (count==0){
+		std::cout<<"Entered Photon Loop"<<std::endl;
+		}
+		count += 1;
 		ModuleKey Mkey=p.first;
 		OMKey om = OMKey(Mkey.GetString(), Mkey.GetOM(), 1);
 		auto geo_it = geo_->omgeo.find(om);
@@ -139,13 +146,13 @@ MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 			if (!noise_) {
 				if (pdf != 0) {
 					llh += pdf; // Expects log pdf
-					// outfile << '\n' << -pdf << ", "  << dist << ", " << Ephi << ", " << pulse.GetTime() - t_direct << ", "<< part.GetPos().GetX() << ", " << part.GetPos().GetY() << ", " <<part.GetPos().GetZ() << ", " << part.GetTime() << ", " << part.GetDir().GetZenith() << ", " << part.GetDir().GetAzimuth();
+					outfile << '\n' << -pdf << ", "  << dist << ", " << Ephi << ", " << pulse.GetTime() - t_direct << ", "<< part.GetPos().GetX() << ", " << part.GetPos().GetY() << ", " <<part.GetPos().GetZ() << ", " << part.GetTime() << ", " << part.GetDir().GetZenith() << ", " << part.GetDir().GetAzimuth();
 					// std::cout<< pdf <<std::endl;
 					continue;
 				}
 				else {
 					llh += -30;
-					// outfile << '\n' << -30 << ", "  << dist << ", " << Ephi << ", " << pulse.GetTime() - t_direct << ", "<< part.GetPos().GetX() << ", " << part.GetPos().GetY() << ", " <<part.GetPos().GetZ() << ", " << part.GetTime() << ", " << part.GetDir().GetZenith() << ", " << part.GetDir().GetAzimuth();
+					outfile << '\n' << -30 << ", "  << dist << ", " << Ephi << ", " << pulse.GetTime() - t_direct << ", "<< part.GetPos().GetX() << ", " << part.GetPos().GetY() << ", " <<part.GetPos().GetZ() << ", " << part.GetTime() << ", " << part.GetDir().GetZenith() << ", " << part.GetDir().GetAzimuth();
 
 				}
 			}

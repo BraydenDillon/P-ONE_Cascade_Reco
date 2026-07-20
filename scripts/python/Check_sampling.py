@@ -77,19 +77,19 @@ def compare_spline(frame) -> None:
     i += 1
     if len(frame["new_photons"]) != 0:
     
-        truth = frame["LLHFit_step5"]
+        truth = frame["I3MCTree"][1]
         #best_fit = frame["llhfit_step5"]
         Event = datacollect(frame)
         event_xyz = Event[:, 0:3]
         event_t = Event[:, 3]
 
         # Calculate Displacement Magnitude
-        diff = -np.array([truth.pos.x, truth.pos.y, truth.pos.z]) + event_xyz
+        diff = np.array([truth.pos.x, truth.pos.y, truth.pos.z]) - event_xyz
         dr = np.linalg.norm(diff, axis=1)
 
         # Calculate Time Residual
-        # dt = abs(truth.time - event_t) - (1.34*dr/c * 1e9)
-        dt = event_t
+        dt = abs(truth.time - event_t) - (1.34*dr/dataclasses.I3Constants.c)
+        # dt = event_t
 
         # Construct Electron direction unit vector from zenith and azimuth
         Ex = np.sin(truth.dir.zenith) * np.cos(truth.dir.azimuth)
@@ -132,22 +132,22 @@ def compare_spline(frame) -> None:
 
 
 i = 0
-file_list = [gcd]
-for i in range(50):
-    if i < 10:
-        n = "00" + str(i)
-    else:
-        n = "0" + str(i)
-    if os.path.isfile(f'/mnt/scratch/dillonb5/mmsreco_sampled/llhfit_conv_stepped_{n}.i3.zst'):
-        file_list.append(
-       f"/mnt/scratch/dillonb5/mmsreco_sampled/llhfit_conv_stepped_{n}.i3.zst"
-        )
-print(file_list)
+file_list = [gcd, '/mnt/scratch/dillonb5/sampled_data/new_080.i3.zst', '/mnt/scratch/dillonb5/sampled_data/new_075.i3.zst', '/mnt/scratch/dillonb5/sampled_data/new_010.i3.zst', '/mnt/scratch/dillonb5/sampled_data/new_050.i3.zst']
+# for i in range(50):
+#     if i < 10:
+#         n = "00" + str(i)
+#     else:
+#         n = "0" + str(i)
+#     if os.path.isfile(f'/mnt/scratch/dillonb5/mmsreco_sampled/llhfit_conv_stepped_{n}.i3.zst'):
+#         file_list.append(
+#        f"/mnt/scratch/dillonb5/mmsreco_sampled/llhfit_conv_stepped_{n}.i3.zst"
+#         )
+# print(file_list)
 
 tray = icetray.I3Tray()
 tray.AddModule('I3Reader', 'reader', filenamelist = file_list)
 
-tray.AddModule(compare_spline, streams = [icetray.I3Frame.Physics])
+tray.AddModule(compare_spline, streams = [icetray.I3Frame.DAQ])
 tray.Execute()
 tray.Finish()
 pvalues = np.array([])
@@ -160,4 +160,4 @@ plt.hist(pvalues, np.linspace(min(pvalues), max(pvalues), 100))
 plt.title('CDF plot of truth cascade')
 plt.xlabel('t (ns)')
 plt.ylabel('CDF')
-plt.savefig('/mnt/home/dillonb5/cascades/plots/cdf_fit_7-16.png')
+plt.savefig('/mnt/home/dillonb5/cascades/plots/cdf_truth2_7-20.png')
