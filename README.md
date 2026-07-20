@@ -12,7 +12,10 @@ The GCD and output file arguments have defaults, so are not required but can be 
 
 mmsreco_test sets up the required icetray services to be called by the I3SimpleFitter module. BasicSeedServiceSeedservice creates the seed, SimpleParameterizationFactory converts the parameters from hypothesis coordinates to likelihood coordinates, LikelihoodFactory is what actually computes the likelihood with mmsreco, and finally SimpleFitter iterates until the likelihood is optimized. Everything but mmsreco is untouched from the public version of icetray.
 
+These fits are stored in new .i3 files as llhfit_step{1-5} for the best fit particle hypotheses at each step of convolution, as well as in llhfit_step{1-5}FitParams storing the log likelihood and other metadata like the number of iterations the fitter takes to converge. The truth particle is also stored in MCTruth and the MCTruth log likelihood is stored in LLHFit_mctruth. 
+
 I have "written" two versions of the mmsreco script that I keep in the **Edited_Icetray** directory. The two versions are 3d_mmsreco and 4d_mmsreco, appended by the date they were last updated. These scripts are not called or referenced anywhere, and only serve as alternate versions of the mmsreco script that I can look at and copy into the source directory when I want to edit the functionality of the script.
 
 All versions of mmsreco also include a commented line with print statements tracking the likelihood contributions. These are being used to diagnose the problems with the reconstruction and can be disregarded if needed. 
 
+## Sampling ##

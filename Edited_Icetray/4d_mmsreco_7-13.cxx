@@ -50,6 +50,7 @@ class MMSLikelihood : public I3EventLogLikelihoodBase, public
 		bool noise_;
 		I3CompressedPhotonSeriesMapConstPtr photons_; // Not sure if this is right object
 		I3GeometryConstPtr geo_;
+		I3ParticleConstPtr hadrons_;
 };
 
 typedef I3SingleServiceFactory<MMSLikelihood, I3EventLogLikelihoodBase>
@@ -92,17 +93,17 @@ MMSLikelihood::SetEvent(const I3Frame &fr)
 	geo_ = fr.Get<I3GeometryConstPtr>(); // maybe assert
 	i3_assert(geo_);
 	// will need to add module to create hadrons key in frame
-	hadrons_ = fr.Get<I3ParticleConstPtr>();
+	hadrons_ = fr.Get<I3Particle>();
 }
 
-std::ofstream outfile("tracking.csv");
+// std::ofstream outfile("tracking.csv");
 //outfile<<"pdf contribution"<< ","<<'dr'<<","<<'Ephi'<<","<<"dphi"<<","<<"tres"<<","<<"eX"<<","<<"eY"<<","<<"eZ"<<","<<"eT"<<","<<"eZenith"<<","<<"eAzimuth"<<'\n';
 
 
 double
 MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 {
-	const I3Particle& part = *hypo.particle;
+	// const I3Particle& part = *hypo.particle;
 	// How to resolve two cascades
 	// leave default assumption as Eminus as primary cascade, then check particle ID and if it comes from the hadrons we can just hard code the difference in direction
 	// fairly straightforward. Can assign values based on other particle in I3MCTree?
@@ -116,9 +117,7 @@ MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 		if(geo_it==geo_->omgeo.end())
 			log_fatal_stream(om << " not found in geometry");
 		
-		if p.second.ID.MinorID == hadrons_.ID.MinorID{
-			part = hadrons;
-		}
+		
 		
 		
 		I3Position cherenkov_emission_point;
@@ -129,33 +128,42 @@ MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 		//     t_direct, dist, arrival_ang,
 		//     1.35557, 1.34 /* fiducial group and phase n */);
 		
-		// calculate distance by hand
-		I3Position diff =  geo_it->second.position - part.GetPos(); // Check this, need magnitude?
-
-		dist += diff.Magnitude(); 
 		
-		t_direct += part.GetTime() + 1.34*dist / I3Constants::c;
-		// Look at documentation to figure out syntax
-
-		Ephi = acos((part.GetDir() * diff) / dist);
-		// dataclasses.I3Direction Eangle = dataclasses.I3Direction([Ex, Ey, Ez])
-		dphi = acos(((-1*geo_it->second.GetDirection()) * diff) / dist);
 		
 
 		for(const auto& pulse : p.second){ // for photon in compressedphotonseries
+			if (pulse.GetMinorID() == hadrons_.GetMinorID()){
+				const I3Particle& part = hadrons_;
+			}
+			else{
+				const I3Particle& part = *hypo.particle;
+			}
+			
+			// calculate distance by hand
+			I3Position diff =  geo_it->second.position - part.GetPos(); // Check this, need magnitude?
+
+			dist += diff.Magnitude(); 
+		
+			t_direct += part.GetTime() + 1.34*dist / I3Constants::c;
+			// Look at documentation to figure out syntax
+
+			Ephi = acos((part.GetDir() * diff) / dist);
+			// dataclasses.I3Direction Eangle = dataclasses.I3Direction([Ex, Ey, Ez])
+			dphi = acos(((-1*geo_it->second.GetDirection()) * diff) / dist);
+
 			double splinecoords[4] = {dist, Ephi, dphi, pulse.GetTime() - t_direct}; 
 			double pdf = spline_table_(splinecoords);
 			
 			if (!noise_) {
 				if (pdf != 0) {
 					llh += pdf; // Expects log pdf
-					outfile << '\n' << -pdf << ", "  << dist << ", " << Ephi << ", " << dphi << ", "<< pulse.GetTime() - t_direct << ", "<< part.GetPos().GetX() << ", " << part.GetPos().GetY() << ", " <<part.GetPos().GetZ() << ", " << part.GetTime() << ", " << part.GetDir().GetZenith() << ", " << part.GetDir().GetAzimuth();
+					// outfile << '\n' << -pdf << ", "  << dist << ", " << Ephi << ", " << dphi << ", "<< pulse.GetTime() - t_direct << ", "<< part.GetPos().GetX() << ", " << part.GetPos().GetY() << ", " <<part.GetPos().GetZ() << ", " << part.GetTime() << ", " << part.GetDir().GetZenith() << ", " << part.GetDir().GetAzimuth();
 					// std::cout<< pdf <<std::endl;
 					continue;
 				}
 				else {
 					llh += -30;
-					outfile << '\n' << 30 << ", "  << dist << ", " << Ephi << ", " <<dphi<<", " << pulse.GetTime() - t_direct << ", "<< part.GetPos().GetX() << ", " << part.GetPos().GetY() << ", " <<part.GetPos().GetZ() << ", " << part.GetTime() << ", " << part.GetDir().GetZenith() << ", " << part.GetDir().GetAzimuth();
+					// outfile << '\n' << 30 << ", "  << dist << ", " << Ephi << ", " <<dphi<<", " << pulse.GetTime() - t_direct << ", "<< part.GetPos().GetX() << ", " << part.GetPos().GetY() << ", " <<part.GetPos().GetZ() << ", " << part.GetTime() << ", " << part.GetDir().GetZenith() << ", " << part.GetDir().GetAzimuth();
 
 				}
 			}

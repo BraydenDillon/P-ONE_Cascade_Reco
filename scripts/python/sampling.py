@@ -20,7 +20,7 @@ parser.add_argument(
 )
 parser.add_argument("-r", "--runnumber", type=int, default=50) 
 parser.add_argument(
-    "-o", "--outfile", default="/mnt/scratch/dillonb5/sampled_data/new_"
+    "-o", "--outfile", default="/mnt/scratch/dillonb5/sampled_7-20/new_"
 ) 
 args = parser.parse_args()
 runnumber = -999
@@ -68,7 +68,7 @@ def resample(frame): # Sampling function. For each frame samples random value fr
             continue
         pos = geo[omkey].pos # Grabs position of omkey, I3Position vector
         Epos = electron.pos # Grabs position of electron, I3Position vector
-        diff = Epos - pos # Displacement vector from optical module to electron
+        diff = - Epos + pos # Displacement vector from optical module to electron
         
         dist = np.linalg.norm(diff) # Magnitude of displacement vector
         # Construction of electron direction unit vector and calculation of angle between electron travel vector and displacement vector

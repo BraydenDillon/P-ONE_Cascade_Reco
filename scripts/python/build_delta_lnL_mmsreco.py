@@ -10,11 +10,14 @@ import argparse
 from scripts.python.SplineEval import evalPdf
 import random
 
+# This file takes a file with log likelihood information and calculates the delta log likelihood between the best fit and the MCTruth
+# It then compiles the data into .npy files for easy analysis in an interactive notebook
+
 parser = argparse.ArgumentParser(
     description="Takes I3photons and I3Electrons from simulation files to read out positional data"
 )
 parser.add_argument(
-    "-i", "--infile", default="/mnt/scratch/dillonb5/mmsreco_garbage/llhfit_garbage_"
+    "-i", "--infile", default="/mnt/scratch/dillonb5/mmsreco_7-20/llhfit_"
 )
 parser.add_argument("-r", "--runnumber", type=int, default=1)
 
@@ -36,14 +39,14 @@ tray.AddModule("I3Reader", "reader", FilenameList=[infile])
 
 def calculate_dlnL(frame):
     if (len(frame['new_photons']) != 0) and (len(frame['I3MCTree']) != 0):
-        # if not np.isnan(frame['LLHFit_step5FitParams'].logl):
-        #     bestfit = frame['LLHFit_step5FitParams'].logl
-        # elif not np.isnan(frame['LLHFit_step4FitParams'].logl):
-        #     bestfit = frame['LLHFit_step4FitParams'].logl
-        # elif not np.isnan(frame['LLHFit_step3FitParams'].logl):
-        #     bestfit = frame['LLHFit_step3FitParams'].logl
-        # elif not np.isnan(frame['LLHFit_step2FitParams'].logl):
-        #     bestfit = frame['LLHFit_step2FitParams'].logl
+        if not np.isnan(frame['LLHFit_step5FitParams'].logl):
+            bestfit = frame['LLHFit_step5FitParams'].logl
+        elif not np.isnan(frame['LLHFit_step4FitParams'].logl):
+            bestfit = frame['LLHFit_step4FitParams'].logl
+        elif not np.isnan(frame['LLHFit_step3FitParams'].logl):
+            bestfit = frame['LLHFit_step3FitParams'].logl
+        elif not np.isnan(frame['LLHFit_step2FitParams'].logl):
+            bestfit = frame['LLHFit_step2FitParams'].logl
         if not np.isnan(frame['LLHFit_step1FitParams'].logl):
             bestfit = frame['LLHFit_step1FitParams'].logl
         else:
@@ -56,5 +59,5 @@ tray.AddModule(calculate_dlnL, Streams = [icetray.I3Frame.Physics])
 tray.Execute()
 tray.Finish()
 ary = np.array(delta_logL)
-np.save("/mnt/scratch/dillonb5/garbage_logL/delta_ary_" + runnumber +".npy", ary)
+np.save("/mnt/scratch/dillonb5/7-20_logL/delta_ary_" + runnumber +".npy", ary)
         
