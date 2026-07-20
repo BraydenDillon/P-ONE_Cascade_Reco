@@ -17,7 +17,8 @@ parser = argparse.ArgumentParser(
     description="Takes I3photons and I3Electrons from simulation files to read out positional data"
 )
 parser.add_argument(
-    "-i", "--infile", default="/mnt/scratch/dillonb5/mmsreco_7-20/llhfit_"
+    "-i", "--infile", default="/mnt/scratch/dillonb5/mmsreco_7-20/llhfit_" # This is the line I change when I run on different files
+        # Change here instead of in submission script so that submit script never needs to change as it doesn't have input file arguments 
 )
 parser.add_argument("-r", "--runnumber", type=int, default=1)
 
@@ -30,11 +31,11 @@ elif args.runnumber < 100:
 else:
     runnumber = str(args.runnumber)
 infile = args.infile + runnumber + ".i3.zst"
-
-delta_logL = []
+# No outfile argument assembly this time, output is npy file not i3 file
+delta_logL = [] # list to be appended to 
 
 tray = icetray.I3Tray()
-tray.AddModule("I3Reader", "reader", FilenameList=[infile])
+tray.AddModule("I3Reader", "reader", FilenameList=[infile]) # no need for a gcd file here. 
 
 
 def calculate_dlnL(frame):
@@ -59,5 +60,5 @@ tray.AddModule(calculate_dlnL, Streams = [icetray.I3Frame.Physics])
 tray.Execute()
 tray.Finish()
 ary = np.array(delta_logL)
-np.save("/mnt/scratch/dillonb5/7-20_logL/delta_ary_" + runnumber +".npy", ary)
+np.save("/mnt/scratch/dillonb5/7-20_logL/delta_ary_" + runnumber +".npy", ary) # saves list to npy file
         

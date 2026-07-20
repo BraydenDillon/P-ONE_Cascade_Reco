@@ -19,3 +19,5 @@ I have "written" two versions of the mmsreco script that I keep in the **Edited_
 All versions of mmsreco also include a commented line with print statements tracking the likelihood contributions. These are being used to diagnose the problems with the reconstruction and can be disregarded if needed. 
 
 ## Sampling ##
+
+This will not be needed in the actual use case for this reconstruction, but as a diagnostic I wrote a script to sample a new time residual from the spline to attempt to reconstruct it. By construction, the fit using the spline should be a good fit to data that was sampled from that same spline. 

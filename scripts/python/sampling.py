@@ -73,12 +73,13 @@ def resample(frame): # Sampling function. For each frame samples random value fr
         dist = np.linalg.norm(diff) # Magnitude of displacement vector
         # Construction of electron direction unit vector and calculation of angle between electron travel vector and displacement vector
         zenith = electron.dir.zenith
-        azimuth = electron.dir.azimuth
-        Ex = np.sin(zenith) * np.cos(azimuth)
-        Ey = np.sin(zenith) * np.sin(azimuth)
-        Ez = np.cos(zenith)
-        Eangle = np.array([Ex, Ey, Ez])
-        phiE = np.arccos(np.dot(diff, Eangle) / dist)
+        # azimuth = electron.dir.azimuth
+        # Ex = np.sin(zenith) * np.cos(azimuth)
+        # Ey = np.sin(zenith) * np.sin(azimuth)
+        # Ez = np.cos(zenith)
+        # Eangle = np.array([Ex, Ey, Ez])
+        # phiE = np.arccos(np.dot(diff, Eangle) / dist)
+        phiE = np.arccos((diff * electron.dir) / dist) # I3Direction object has built in operator for dot product
 
         pdf = evalPdf(spline, dist, phiE, tgrid) # Evaluates the pdf (true pdf, not log) of the spline
         
