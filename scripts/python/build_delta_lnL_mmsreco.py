@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser(
     description="Takes I3photons and I3Electrons from simulation files to read out positional data"
 )
 parser.add_argument(
-    "-i", "--infile", default="/mnt/scratch/dillonb5/mmsreco_7-20/llhfit_" # This is the line I change when I run on different files
+    "-i", "--infile", default="/mnt/scratch/dillonb5/mmsreco_7-21_fine_bin/llhfit_" # This is the line I change when I run on different files
         # Change here instead of in submission script so that submit script never needs to change as it doesn't have input file arguments 
 )
 parser.add_argument("-r", "--runnumber", type=int, default=1)
@@ -48,17 +48,20 @@ def calculate_dlnL(frame):
             bestfit = frame['LLHFit_step3FitParams'].logl
         elif not np.isnan(frame['LLHFit_step2FitParams'].logl):
             bestfit = frame['LLHFit_step2FitParams'].logl
-        if not np.isnan(frame['LLHFit_step1FitParams'].logl):
+        elif not np.isnan(frame['LLHFit_step1FitParams'].logl):
             bestfit = frame['LLHFit_step1FitParams'].logl
         else:
             return
-
-        delta_logL.append(frame['LLHFit_mctruth'].logl - bestfit)
+        dlnL = frame['LLHFit_mctruth'].logl - bestfit
+        delta_logL.append(dlnL)
+        if dlnL < 0:
+            print(infile, frame['I3EventHeader'].run_id, frame['I3EventHeader'].event_id, dlnL)
+        
 
 tray.AddModule(calculate_dlnL, Streams = [icetray.I3Frame.Physics])
 
 tray.Execute()
 tray.Finish()
 ary = np.array(delta_logL)
-np.save("/mnt/scratch/dillonb5/7-20_logL/delta_ary_" + runnumber +".npy", ary) # saves list to npy file
+np.save("/mnt/scratch/dillonb5/fine_binned_logL/delta_ary_" + runnumber +".npy", ary) # saves list to npy file
         

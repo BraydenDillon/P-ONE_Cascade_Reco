@@ -20,7 +20,7 @@ parser.add_argument(
 )
 parser.add_argument("-r", "--runnumber", type=int, default=50) 
 parser.add_argument(
-    "-o", "--outfile", default="/mnt/scratch/dillonb5/sampled_7-20/new_"
+    "-o", "--outfile", default="/mnt/scratch/dillonb5/sampled_7-21_fine_bin/new_"
 ) 
 args = parser.parse_args()
 runnumber = -999
@@ -41,7 +41,8 @@ tray.AddModule("I3Reader", "reader", FilenameList=[gcdfile, infile]) # Reads thr
 
 
 spline = photospline.SplineTable("/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits") # Load in spline fit
-tgrid = np.linspace(min(spline.knots[-1]), max(spline.knots[-1]), 1000) # Define tgrid for interpolation of spline fit for sampling
+#spline = photospline.SplineTable("/mnt/research/IceCube/jalabadz/iter_6.0_4D_I3Photons/spline_result/splinelog.fits") # Load in spline fit
+tgrid = np.linspace(spline.extents[2][0], spline.extents[2][1], 10000) # Define tgrid for interpolation of spline fit for sampling
 # tgrid = np.linspace(-5, 5, 1000)
 N_GROUP = 1.34
 N_PHASE = 1.35557
@@ -66,13 +67,13 @@ def resample(frame): # Sampling function. For each frame samples random value fr
             new[omkey] = series # If omkey is not found in geo module map, keep original times
             stats["bad_doms"] += 1
             continue
-        pos = geo[omkey].pos # Grabs position of omkey, I3Position vector
+        dompos = geo[omkey].pos # Grabs position of omkey, I3Position vector
         Epos = electron.pos # Grabs position of electron, I3Position vector
-        diff = - Epos + pos # Displacement vector from optical module to electron
+        diff = dompos - Epos # Displacement vector from optical module to electron
         
         dist = np.linalg.norm(diff) # Magnitude of displacement vector
         # Construction of electron direction unit vector and calculation of angle between electron travel vector and displacement vector
-        zenith = electron.dir.zenith
+        # zenith = electron.dir.zenith
         # azimuth = electron.dir.azimuth
         # Ex = np.sin(zenith) * np.cos(azimuth)
         # Ey = np.sin(zenith) * np.sin(azimuth)
@@ -81,8 +82,9 @@ def resample(frame): # Sampling function. For each frame samples random value fr
         # phiE = np.arccos(np.dot(diff, Eangle) / dist)
         phiE = np.arccos((diff * electron.dir) / dist) # I3Direction object has built in operator for dot product
 
+        dphi = np.arccos(((-1*dompos) * diff) / dist) # only needed for 4d spline sampling
+
         pdf = evalPdf(spline, dist, phiE, tgrid) # Evaluates the pdf (true pdf, not log) of the spline
-        
         pdf = np.clip(pdf, 0, None) # Clips the pdf to be non-negative, as negative values are not valid for a pdf
         tot = pdf.sum()
         if not np.isfinite(tot) or tot <= 0:

@@ -1,6 +1,6 @@
 #!/bin/bash --login
 
-#SBATCH --job-name=mmsreco
+#SBATCH --job-name=mmsreco_fine_binned
 #SBATCH --array=0-100
 #SBATCH --ntasks=1
 #SBATCH --time=24:00:00
@@ -14,4 +14,4 @@ echo "Running MMSReco minimization"
 cd /mnt/home/dillonb5/cascades/scripts
 eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.4.2/setup.sh`
 
-/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/python/mmsreco_test.py -i /mnt/scratch/dillonb5/sampled_7-20/new_ -r $SLURM_ARRAY_TASK_ID
+/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/python/mmsreco_test.py -r $SLURM_ARRAY_TASK_ID

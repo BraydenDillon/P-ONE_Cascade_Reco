@@ -60,7 +60,7 @@ def datacollect(frame):
     return np.column_stack([xyz, t])
 
 
-t = np.linspace(splinefit_3d.extents[2][0], splinefit_3d.extents[2][1], 1000)
+t = np.linspace(splinefit_3d.extents[2][0], splinefit_3d.extents[2][1], 25000)
 
 params = np.empty((0,3))
 
@@ -132,7 +132,7 @@ def compare_spline(frame) -> None:
 
 
 i = 0
-file_list = [gcd, '/mnt/scratch/dillonb5/sampled_data/new_080.i3.zst', '/mnt/scratch/dillonb5/sampled_data/new_075.i3.zst', '/mnt/scratch/dillonb5/sampled_data/new_010.i3.zst', '/mnt/scratch/dillonb5/sampled_data/new_050.i3.zst']
+file_list = [gcd, '/mnt/scratch/dillonb5/sampled_7-21_fine_bin/new_080.i3.zst', '/mnt/scratch/dillonb5/sampled_7-21_fine_bin/new_075.i3.zst']
 # for i in range(50):
 #     if i < 10:
 #         n = "00" + str(i)
@@ -151,13 +151,19 @@ tray.AddModule(compare_spline, streams = [icetray.I3Frame.DAQ])
 tray.Execute()
 tray.Finish()
 pvalues = np.array([])
+bad_params = np.empty((0,4))
 for i in range(len(params)):
     pdf = evalPdf(splinefit_3d, params[i,0], params[i,1], t)
     cdf = np.sum(pdf[:np.searchsorted(t, params[i,2])]) / np.sum(pdf)
     pvalues = np.append(pvalues, cdf)
+    
+    ary = np.array([cdf, params[i,0], params[i,1], params[i,2]])
+    bad_params = np.vstack((bad_params, ary))
+
+np.save('/mnt/home/dillonb5/cascades/bad_params_truth5_7-21.npy', bad_params)
 
 plt.hist(pvalues, np.linspace(min(pvalues), max(pvalues), 100))
 plt.title('CDF plot of truth cascade')
-plt.xlabel('t (ns)')
-plt.ylabel('CDF')
-plt.savefig('/mnt/home/dillonb5/cascades/plots/cdf_truth2_7-20.png')
+plt.ylabel('t (ns)')
+plt.xlabel('CDF')
+plt.savefig('/mnt/home/dillonb5/cascades/plots/cdf_truth5_7-21.png')

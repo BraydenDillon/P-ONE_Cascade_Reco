@@ -50,7 +50,6 @@ class MMSLikelihood : public I3EventLogLikelihoodBase, public
 		bool noise_;
 		I3CompressedPhotonSeriesMapConstPtr photons_; // Not sure if this is right object
 		I3GeometryConstPtr geo_;
-		I3ParticleConstPtr hadrons_;
 };
 
 typedef I3SingleServiceFactory<MMSLikelihood, I3EventLogLikelihoodBase>
@@ -92,8 +91,6 @@ MMSLikelihood::SetEvent(const I3Frame &fr)
 	i3_assert(photons_);
 	geo_ = fr.Get<I3GeometryConstPtr>(); // maybe assert
 	i3_assert(geo_);
-	// will need to add module to create hadrons key in frame
-	hadrons_ = fr.Get<I3Particle>();
 }
 
 // std::ofstream outfile("tracking.csv");
@@ -103,10 +100,7 @@ MMSLikelihood::SetEvent(const I3Frame &fr)
 double
 MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 {
-	// const I3Particle& part = *hypo.particle;
-	// How to resolve two cascades
-	// leave default assumption as Eminus as primary cascade, then check particle ID and if it comes from the hadrons we can just hard code the difference in direction
-	// fairly straightforward. Can assign values based on other particle in I3MCTree?
+	const I3Particle& part = *hypo.particle;
 	
 	
 	double llh = 0;
@@ -132,15 +126,10 @@ MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 		
 
 		for(const auto& pulse : p.second){ // for photon in compressedphotonseries
-			if (pulse.GetMinorID() == hadrons_.GetMinorID()){
-				const I3Particle& part = hadrons_;
-			}
-			else{
-				const I3Particle& part = *hypo.particle;
-			}
+			
 			
 			// calculate distance by hand
-			I3Position diff =  geo_it->second.position - part.GetPos(); // Check this, need magnitude?
+			I3Position diff =  geo_it->second.position - part.GetPos(); 
 
 			dist += diff.Magnitude(); 
 		

@@ -9,3 +9,8 @@ scripts/core.*
 *.out
 fits/
 scripts/tracking.txt
+bad_params_truth2_7-21.npy
+bad_params_truth3_7-21.npy
+bad_params_truth4_7-21.npy
+bad_params_truth_7-21.npy
+cdf_list_truth_7-21.npy
