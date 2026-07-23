@@ -25,3 +25,12 @@ This will not be needed in the actual use case for this reconstruction, but as a
 The sampling used is a cdf sampling of the spline distribution of time residual values. First the pdf for a set of coordinates is calculated, then the cdf is calculated on a tgrid array using that pdf. A random number generator is used to sample the inverse of the cdf to obtain a time residual value. Then the actual time residual value is calculated and subtracted off of the photon time, then the sampled time residual is added back on. This new value is put into a new photon object (aptly called new_photons) along with the same information from the original photon save the original time. This creates a new absolute time that, when calculated with a reco, will return the sampled time resolution value.
 
 The sampling source script is called **sampling.py** and it is run using **run_sampling.sb**. The input data, output file, run number, and gcd file are customizeable as inputs but as of now the spline needs to be changed within the actual function. 
+
+Sampling is also currently configured to sample the 4d spline, which involves calculating an individual cdf for every photon due to the nature of the 4th dimension of the spline, impact angle (dphi). 
+
+## Check Sampling ##
+
+This has been used a few times for a few different checks that the sampling function atcually accurately samples from the spline. The most important test that has stayed the longest is the cdf test. The script steps through a t array and compiles pdfs to calculate a cumulative distribution function and produce a plot of the cdf calculated at every t value in the array. This histogram should, by construction, be a completely uniform distribution since it was sampled from the cdf originally. There is some commented code in there as well for tests where nonsense values were sampled instead to make sure sampling was doing anything at all. Of note there is code to re-assemble a gaussian sample, and code to graph a pdf when sampled data was all taken from the same set of coordinates (except fot tres). Unless there is uncertainty about a future sampling method, these can be ignored/discarded. 
+
+Following the standard format, the python file is called **check_sampling.py** and the batch file that runs it is called **run_check.sb**. Another file called run_check_norm.sb exists but was only for the aformentioned gaussian sampling check. 
+
