@@ -48,7 +48,7 @@ class MMSLikelihood : public I3EventLogLikelihoodBase, public
 		photospline::splinetable<> spline_table_;
 		std::string photons_name_;
 		bool noise_;
-		I3CompressedPhotonSeriesMapConstPtr photons_; // Not sure if this is right object
+		I3PhotonSeriesMapConstPtr photons_; // Not sure if this is right object
 		I3GeometryConstPtr geo_;
 };
 
@@ -87,13 +87,13 @@ MMSLikelihood::Configure()
 void
 MMSLikelihood::SetEvent(const I3Frame &fr)
 {
-	photons_ = fr.Get<I3CompressedPhotonSeriesMapConstPtr>(photons_name_);
+	photons_ = fr.Get<I3PhotonSeriesMapConstPtr>(photons_name_);
 	i3_assert(photons_);
 	geo_ = fr.Get<I3GeometryConstPtr>(); // maybe assert
 	i3_assert(geo_);
 }
 
-// std::ofstream outfile("tracking.csv");
+std::ofstream outfile("tracking.csv");
 //outfile<<"pdf contribution"<< ","<<'dr'<<","<<'Ephi'<<","<<"dphi"<<","<<"tres"<<","<<"eX"<<","<<"eY"<<","<<"eZ"<<","<<"eT"<<","<<"eZenith"<<","<<"eAzimuth"<<'\n';
 
 
@@ -138,7 +138,13 @@ MMSLikelihood::GetLogLikelihood(const I3EventHypothesis &hypo)
 
 			Ephi = acos((part.GetDir() * diff) / dist);
 			// dataclasses.I3Direction Eangle = dataclasses.I3Direction([Ex, Ey, Ez])
-			dphi = acos(((-1*geo_it->second.GetDirection()) * diff) / dist);
+			I3Direction photondir = pulse.GetDir();
+			I3Position photonpos = pulse.GetPos();
+			
+			dphi = acos(std::max(-1.0, std::min(1.0,-1*(photondir*photonpos) / photonpos.Magnitude())));
+			if (dphi < 0 or dphi > 1.5707963267948966){
+				outfile<< "dphi: " << dphi<< '\n';
+			}
 
 			double splinecoords[4] = {dist, Ephi, dphi, pulse.GetTime() - t_direct}; 
 			double pdf = spline_table_(splinecoords);

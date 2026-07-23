@@ -1,6 +1,6 @@
 #!/bin/bash --login
 
-#SBATCH --job-name=mmsreco_fine_binned
+#SBATCH --job-name=mmsreco_4d_MC
 #SBATCH --array=0-100
 #SBATCH --ntasks=1
 #SBATCH --time=24:00:00
@@ -14,4 +14,4 @@ echo "Running MMSReco minimization"
 cd /mnt/home/dillonb5/cascades/scripts
 eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.4.2/setup.sh`
 
-/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/python/mmsreco_test.py -r $SLURM_ARRAY_TASK_ID
+/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/python/mmsreco_test.py -r $SLURM_ARRAY_TASK_ID -g /mnt/research/IceCube/PONE/i3/MC/PONE_800mGrid_40mSpacing_40OMstring_PMTsphere.i3.gz

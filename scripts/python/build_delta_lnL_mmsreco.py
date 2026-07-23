@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser(
     description="Takes I3photons and I3Electrons from simulation files to read out positional data"
 )
 parser.add_argument(
-    "-i", "--infile", default="/mnt/scratch/dillonb5/mmsreco_7-21_fine_bin/llhfit_" # This is the line I change when I run on different files
+    "-i", "--infile", default="/mnt/scratch/dillonb5/mmsreco_MC_4d_7-23/llhfit_" # This is the line I change when I run on different files
         # Change here instead of in submission script so that submit script never needs to change as it doesn't have input file arguments 
 )
 parser.add_argument("-r", "--runnumber", type=int, default=1)
@@ -25,9 +25,9 @@ parser.add_argument("-r", "--runnumber", type=int, default=1)
 args = parser.parse_args()
 runnumber = -999
 if args.runnumber < 10:
-    runnumber = "00" + str(args.runnumber)
+    runnumber = "000" + str(args.runnumber)
 elif args.runnumber < 100:
-    runnumber = "0" + str(args.runnumber)
+    runnumber = "00" + str(args.runnumber)
 else:
     runnumber = str(args.runnumber)
 infile = args.infile + runnumber + ".i3.zst"
@@ -39,7 +39,7 @@ tray.AddModule("I3Reader", "reader", FilenameList=[infile]) # no need for a gcd 
 
 
 def calculate_dlnL(frame):
-    if (len(frame['new_photons']) != 0) and (len(frame['I3MCTree']) != 0):
+    if (len(frame['I3Photons']) != 0) and (len(frame['I3MCTree']) != 0):
         if not np.isnan(frame['LLHFit_step5FitParams'].logl):
             bestfit = frame['LLHFit_step5FitParams'].logl
         elif not np.isnan(frame['LLHFit_step4FitParams'].logl):
@@ -63,5 +63,5 @@ tray.AddModule(calculate_dlnL, Streams = [icetray.I3Frame.Physics])
 tray.Execute()
 tray.Finish()
 ary = np.array(delta_logL)
-np.save("/mnt/scratch/dillonb5/fine_binned_logL/delta_ary_" + runnumber +".npy", ary) # saves list to npy file
+np.save("/mnt/scratch/dillonb5/4d_logL_7-23/delta_ary_" + runnumber +".npy", ary) # saves list to npy file
         

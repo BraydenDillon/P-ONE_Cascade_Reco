@@ -9,19 +9,19 @@ icetray.load("mmsreco")
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-i", "--infile", default="/mnt/scratch/dillonb5/sampled_7-21_fine_bin/new_") # I change the input file here, so that I don't need to change two scripts
+parser.add_argument("-i", "--infile", default="/mnt/research/IceCube/PONE/moudgil1_gen/test1_cascade/gen_cas_") # I change the input file here, so that I don't need to change two scripts
 parser.add_argument("-r", "--runnumber", type=int, default=1)
 parser.add_argument(
     "-g", "--gcdfile", default="/mnt/home/dillonb5/cascades/gcdfile/PONE_800mGrid.i3.gz"
 )
-parser.add_argument('-o', "--outfile", default = "/mnt/scratch/dillonb5/mmsreco_7-21_fine_bin/llhfit_") # Output file name, will be appended with run number
+parser.add_argument('-o', "--outfile", default = "/mnt/scratch/dillonb5/mmsreco_MC_4d_7-23/llhfit_") # Output file name, will be appended with run number
 
 args = parser.parse_args()
 runnumber = -999
 if args.runnumber < 10:
-    runnumber = "00" + str(args.runnumber)
+    runnumber = "000" + str(args.runnumber)
 elif args.runnumber < 100:
-    runnumber = "0" + str(args.runnumber)
+    runnumber = "00" + str(args.runnumber)
 else:
     runnumber = str(args.runnumber)
 infile = args.infile + runnumber + ".i3.zst"
@@ -31,11 +31,11 @@ outfile = args.outfile + runnumber + ".i3.zst"
 tray = I3Tray()
 tray.AddModule("I3Reader", "reader", Filenamelist=[gcdfile, infile])
 tray.AddModule("I3NullSplitter", "Splitter")
-# splinepath = '/mnt/research/IceCube/jalabadz/iter_6.0_4D_I3Photons/spline_result/splinelog.fits' # Self-explanatory but this is the path to 4d spline fit. Needs to switch for 3d fits
-splinepath = '/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits' # Self-explanatory but this is the path to 3d spline fit. Needs to switch for 4d fits
+splinepath = '/mnt/research/IceCube/jalabadz/iter_6.0_4D_I3Photons/spline_result/splinelog.fits' # Self-explanatory but this is the path to 4d spline fit. Needs to switch for 3d fits
+# splinepath = '/mnt/home/dillonb5/cascades/fits/splinelog_3D.fits' # Self-explanatory but this is the path to 3d spline fit. Needs to switch for 4d fits
 
 def mctruth(fr): # Function that will be added to the tray. Extracts the MCTruth from the MCtree and adds it to the frame independently
-    fr["MCTruth"] = fr["I3MCTree"][1] # For 3d we treat the electron (second entry in mctree) as truth particle. For 4d we treat the neutrino itself as the truth which is the first particle.
+    fr["MCTruth"] = fr["I3MCTree"][0] # For 3d we treat the electron (second entry in mctree) as truth particle. For 4d we treat the neutrino itself as the truth which is the first particle.
     fr["MCTruth"].fit_status = fr["MCTruth"].OK
 
 # def mchadrons(fr):
@@ -46,7 +46,7 @@ def mctruth(fr): # Function that will be added to the tray. Extracts the MCTruth
 tray.Add(mctruth, Streams=[icetray.I3Frame.DAQ]) # adds mctruth function to tray
 
 
-pulses = "new_photons" # 
+pulses = "I3Photons" # Should be I3Photons for simulated data, new_photons for sampled simulated data, recopulses for real data
 seed = "MCTruth"
 tray.AddService("I3BasicSeedServiceFactory", "seed1", FirstGuess=seed) # First step of convolution. Seed is MCTruth
 tray.AddService( # Initializes simplex minimizer to be used in fitter module
@@ -78,7 +78,7 @@ tray.AddService( # calls our edited mmsreco likelihood service
     InputPhotons=pulses,
     SplineTablePath=splinepath,
     ExpectNoise=False,
-    ConvolutionWidth=20.0 # Start with wide convolution width to find the minimum efficiently, then later narrow down
+    ConvolutionWidth=35.0 # Start with wide convolution width to find the minimum efficiently, then later narrow down
 )
 tray.AddModule( # Compiles all services into fitter module to find best fit for likelihood 
     "I3SimpleFitter",
@@ -102,7 +102,7 @@ tray.AddService(
     InputPhotons=pulses,
     SplineTablePath=splinepath,
     ExpectNoise=False,
-    ConvolutionWidth=15.0
+    ConvolutionWidth=20.0
 )
 
 tray.AddModule(
@@ -127,7 +127,7 @@ tray.AddService(
     InputPhotons=pulses,
     SplineTablePath=splinepath,
     ExpectNoise=False,
-    ConvolutionWidth=10.0
+    ConvolutionWidth=15.0
 )
 
 tray.AddModule(

@@ -100,6 +100,10 @@ def compare_spline(frame) -> None:
         Eangle = np.array([Ex, Ey, Ez])
         Ephi = np.arccos(np.dot(diff, Eangle) / dr)
 
+        
+
+        dphi = np.arccos(((-1*dompos) * diff) / dr)
+
         params = np.vstack((params, np.column_stack([dr, Ephi, dt])))
 
     

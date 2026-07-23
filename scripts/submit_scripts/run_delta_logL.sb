@@ -12,6 +12,6 @@
 echo "Running Delta LogL Collection"
 
 cd /mnt/home/dillonb5/cascades/scripts
-eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.3.0/setup.sh`
+eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.4.2/setup.sh`
 
 /mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/python/build_delta_lnL_mmsreco.py  -r $SLURM_ARRAY_TASK_ID 

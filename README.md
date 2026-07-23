@@ -21,3 +21,7 @@ All versions of mmsreco also include a commented line with print statements trac
 ## Sampling ##
 
 This will not be needed in the actual use case for this reconstruction, but as a diagnostic I wrote a script to sample a new time residual from the spline to attempt to reconstruct it. By construction, the fit using the spline should be a good fit to data that was sampled from that same spline. 
+
+The sampling used is a cdf sampling of the spline distribution of time residual values. First the pdf for a set of coordinates is calculated, then the cdf is calculated on a tgrid array using that pdf. A random number generator is used to sample the inverse of the cdf to obtain a time residual value. Then the actual time residual value is calculated and subtracted off of the photon time, then the sampled time residual is added back on. This new value is put into a new photon object (aptly called new_photons) along with the same information from the original photon save the original time. This creates a new absolute time that, when calculated with a reco, will return the sampled time resolution value.
+
+The sampling source script is called **sampling.py** and it is run using **run_sampling.sb**. The input data, output file, run number, and gcd file are customizeable as inputs but as of now the spline needs to be changed within the actual function. 

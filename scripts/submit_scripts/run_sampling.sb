@@ -1,6 +1,6 @@
 #!/bin/bash --login
 
-#SBATCH --job-name=sampled_data
+#SBATCH --job-name=4d_sampling
 #SBATCH --array=0-100
 #SBATCH --ntasks=1
 #SBATCH --time=24:00:00
@@ -12,6 +12,6 @@
 echo "Running Delta LogL Collection"
 
 cd /mnt/home/dillonb5/cascades/scripts
-eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.3.0/setup.sh`
+eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.4.2/setup.sh`
 
-/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/python/sampling.py -i /mnt/home/dillonb5/cascades/nue_data/gen_ -r $SLURM_ARRAY_TASK_ID 
+/mnt/home/dillonb5/icetray/build/env-shell.sh python3 /mnt/home/dillonb5/cascades/scripts/python/sampling.py -i /mnt/research/IceCube/PONE/moudgil1_gen/test1_cascade/gen_cas_ -g /mnt/research/IceCube/PONE/i3/MC/PONE_800mGrid_40mSpacing_40OMstring_PMTsphere.i3.gz -r $SLURM_ARRAY_TASK_ID 
